@@ -1,17 +1,22 @@
+---
 # AquaSample - App móvil desarrollada para Aldemar SpA - MVP académico
-
+---
+---
 ## Descripción del Proyecto
 AquaSample es una solución móvil diseñada para mejorar el proceso de muestreo de líneas de cultivo de choritos en la industria mitilicultora. Actualmente, el registro de muestras se realiza manualmente: el operador identifica la muestra, cuenta individuos, registra datos y toma fotografías.
-
+---
+---
 ### El problema:
 La información queda dispersa entre planillas, fotografias y notas, dificultando el seguimiento histórico y la comparación entre fechas.
-
+---
+---
 ### La solución:
 Una app que centralice registros, asocie evidencia fotográfica y facilite la trazabilidad por centro, tren, línea y fecha
-
+---
+---
 ## Objetivo del MVP
 Desarrollar una aplicación móvil funcional que permita: 
-
+---
 - Registrar muestras de choritos con datos estructurados
 - Capturar o cargar fotografía asociada a cada muestra
 - Validar campos obligatorios antes de guardar
