@@ -21,7 +21,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -31,9 +30,6 @@ import com.example.aquasample.model.Rol
 import com.example.aquasample.ui.navigation.abrirNuevaMuestra
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
-
-/** Color "Adicional" de la paleta, usado para el estado pendiente. */
-private val ColorPendiente = Color(0xFFFFB300)
 
 @Composable
 fun InicioScreen(
@@ -144,7 +140,7 @@ private fun TarjetaMuestra(muestra: Muestra, mostrarOperador: Boolean) {
 @Composable
 private fun EtiquetaEstado(estado: EstadoRevision) {
     val (fondo, texto) = when (estado) {
-        EstadoRevision.PENDIENTE, EstadoRevision.CORREGIDO -> ColorPendiente to Color(0xFF1B1B1B)
+        EstadoRevision.PENDIENTE, EstadoRevision.CORREGIDO -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onTertiary
         EstadoRevision.OBSERVADO -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
         EstadoRevision.VALIDADO -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
     }
