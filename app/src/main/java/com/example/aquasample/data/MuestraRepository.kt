@@ -11,12 +11,12 @@ import kotlinx.coroutines.flow.update
  * Repositorio en memoria. Las muestras viven mientras la app está abierta.
  * Más adelante se puede cambiar por Room sin tocar las pantallas.
  */
-class MuestraRepository {
+class MuestraRepository(iniciales: List<Muestra> = emptyList()) {
 
-    private val _muestras = MutableStateFlow<List<Muestra>>(emptyList())
+    private val _muestras = MutableStateFlow(iniciales)
     val muestras: StateFlow<List<Muestra>> = _muestras.asStateFlow()
 
-    private var ultimoId = 0
+    private var ultimoId = iniciales.maxOfOrNull { it.id } ?: 0
 
     fun siguienteId(): Int = ++ultimoId
 
@@ -34,7 +34,10 @@ class MuestraRepository {
     }
 
     companion object {
-        /** Instancia compartida para que todas las pantallas vean las mismas muestras. */
-        val instancia = MuestraRepository()
+        /**
+         * Instancia compartida para que todas las pantallas vean las mismas muestras.
+         * Parte con las muestras de ejemplo de DatosFicticios.
+         */
+        val instancia = MuestraRepository(DatosFicticios.muestrasEjemplo)
     }
 }
