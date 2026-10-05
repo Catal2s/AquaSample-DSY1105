@@ -1,32 +1,25 @@
 package com.example.aquasample.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.aquasample.model.EstadoRevision
-import com.example.aquasample.model.Muestra
 import com.example.aquasample.model.Rol
+import com.example.aquasample.ui.components.TarjetaMuestra
 import com.example.aquasample.ui.navigation.abrirNuevaMuestra
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
@@ -99,56 +92,5 @@ fun InicioScreen(
         items(muestras, key = { it.id }) { muestra ->
             TarjetaMuestra(muestra, mostrarOperador = !esOperador)
         }
-    }
-}
-
-@Composable
-private fun TarjetaMuestra(muestra: Muestra, mostrarOperador: Boolean) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Muestra #${muestra.id}", fontWeight = FontWeight.Bold)
-                EtiquetaEstado(muestra.estado)
-            }
-            Text("${muestra.centro.nombre} · ${muestra.tren.nombre} · ${muestra.linea.nombre}")
-            Text(
-                text = "${muestra.fecha} ${muestra.hora} · ${muestra.conteo.individuos} individuos",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (mostrarOperador) {
-                Text(
-                    text = "Operador: ${muestra.operador.nombre}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            muestra.comentarioSupervisor?.let {
-                Text("Observación: $it", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
-private fun EtiquetaEstado(estado: EstadoRevision) {
-    val (fondo, texto) = when (estado) {
-        EstadoRevision.PENDIENTE, EstadoRevision.CORREGIDO -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onTertiary
-        EstadoRevision.OBSERVADO -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-        EstadoRevision.VALIDADO -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
-    }
-    Surface(color = fondo, contentColor = texto, shape = RoundedCornerShape(50)) {
-        Text(
-            text = estado.etiqueta,
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-        )
     }
 }

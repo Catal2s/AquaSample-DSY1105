@@ -27,10 +27,12 @@ import androidx.navigation.compose.rememberNavController
 import com.example.aquasample.R
 import com.example.aquasample.model.Rol
 import com.example.aquasample.ui.screens.ConteoScreen
+import com.example.aquasample.ui.screens.HistorialScreen
 import com.example.aquasample.ui.screens.InicioScreen
 import com.example.aquasample.ui.screens.LoginScreen
 import com.example.aquasample.ui.screens.NuevaMuestraScreen
 import com.example.aquasample.ui.screens.ResumenScreen
+import com.example.aquasample.viewmodel.HistorialViewModel
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
 
@@ -45,10 +47,12 @@ fun AquaSampleApp() {
     val navController = rememberNavController()
     val loginViewModel: LoginViewModel = viewModel()
     val muestraViewModel: MuestraViewModel = viewModel()
+    val historialViewModel: HistorialViewModel = viewModel()
 
     val loginEstado by loginViewModel.uiState.collectAsState()
     val entradaActual by navController.currentBackStackEntryAsState()
     val rutaActual = entradaActual?.destination?.route ?: Rutas.LOGIN
+    val sesionIniciada = loginEstado.sesionIniciada
     val esOperador = loginEstado.usuarioActual?.rol == Rol.OPERADOR
 
     Scaffold(
@@ -59,6 +63,7 @@ fun AquaSampleApp() {
                 onCerrarSesion = {
                     loginViewModel.cerrarSesion()
                     muestraViewModel.nuevaMuestra()
+                    historialViewModel.limpiarFiltros()
                     navController.navigate(Rutas.LOGIN) {
                         popUpTo(navController.graph.id) { inclusive = true }
                     }
@@ -66,16 +71,24 @@ fun AquaSampleApp() {
             )
         },
         bottomBar = {
-            if (esOperador && rutaActual != Rutas.LOGIN) {
+            // Operador: Inicio, Nueva muestra e Historial. Supervisor: Inicio e Historial.
+            if (sesionIniciada && rutaActual != Rutas.LOGIN) {
                 BarraNavegacion(
                     rutaActual = rutaActual,
+                    mostrarNuevaMuestra = esOperador,
                     onInicio = {
                         navController.navigate(Rutas.INICIO) {
                             popUpTo(Rutas.INICIO)
                             launchSingleTop = true
                         }
                     },
-                    onNuevaMuestra = { navController.abrirNuevaMuestra(muestraViewModel) }
+                    onNuevaMuestra = { navController.abrirNuevaMuestra(muestraViewModel) },
+                    onHistorial = {
+                        navController.navigate(Rutas.HISTORIAL) {
+                            popUpTo(Rutas.INICIO)
+                            launchSingleTop = true
+                        }
+                    }
                 )
             }
         }
@@ -90,6 +103,7 @@ fun AquaSampleApp() {
             composable(Rutas.NUEVA_MUESTRA) { NuevaMuestraScreen(muestraViewModel, navController) }
             composable(Rutas.CONTEO) { ConteoScreen(muestraViewModel, navController) }
             composable(Rutas.RESUMEN) { ResumenScreen(loginViewModel, muestraViewModel, navController) }
+            composable(Rutas.HISTORIAL) { HistorialScreen(loginViewModel, historialViewModel) }
         }
     }
 }
@@ -117,6 +131,7 @@ private fun BarraSuperior(
         Rutas.NUEVA_MUESTRA -> "Nueva muestra"
         Rutas.CONTEO -> "Conteo"
         Rutas.RESUMEN -> "Resumen"
+        Rutas.HISTORIAL -> "Historial"
         else -> "AquaSample"
     }
     TopAppBar(
@@ -147,8 +162,10 @@ private fun BarraSuperior(
 @Composable
 private fun BarraNavegacion(
     rutaActual: String,
+    mostrarNuevaMuestra: Boolean,
     onInicio: () -> Unit,
-    onNuevaMuestra: () -> Unit
+    onNuevaMuestra: () -> Unit,
+    onHistorial: () -> Unit
 ) {
     NavigationBar {
         ItemBarra(
@@ -157,11 +174,19 @@ private fun BarraNavegacion(
             seleccionado = rutaActual == Rutas.INICIO,
             onClick = onInicio
         )
+        if (mostrarNuevaMuestra) {
+            ItemBarra(
+                texto = "Nueva muestra",
+                icono = R.drawable.ic_agregar,
+                seleccionado = rutaActual in Rutas.FLUJO_MUESTRA,
+                onClick = onNuevaMuestra
+            )
+        }
         ItemBarra(
-            texto = "Nueva muestra",
-            icono = R.drawable.ic_agregar,
-            seleccionado = rutaActual in Rutas.FLUJO_MUESTRA,
-            onClick = onNuevaMuestra
+            texto = "Historial",
+            icono = R.drawable.ic_historial,
+            seleccionado = rutaActual == Rutas.HISTORIAL,
+            onClick = onHistorial
         )
     }
 }
