@@ -1,113 +1,114 @@
-# Tareas pendientes AquaSample (DSY1105, La Brigada Fantasma 01)
+# Tareas AquaSample (DSY1105, La Brigada Fantasma 01)
 
-Estado al 14-10-2026. Basado en los requerimientos del caso (RF01 a RF10) y en lo que hoy existe en el repo.
+Estado al 14-10-2026, después del merge del PR #2 en `main` (commit `ea53045`). Revisado contra el código real del repositorio.
 
-## Qué ya está hecho
+## Fechas clave (pizarra)
 
-- Proyecto Android con Kotlin, Jetpack Compose y Material 3
-- Tema con la paleta AquaSample (`ui/theme`)
-- Diseños: logo, 4 wireframes y flujo UML en `docs/diseno/`
-- Evidencias de clase 1 y 2
+- Próxima semana (desde el lunes 19): salen 3 clases en video en AVA: (1) Filtros y Búsqueda, (2) Base de Datos Room (SQLite), (3) Fotografías y Galería de Imágenes.
+- **Esa semana es la última para avanzar en la app.** Del 22 al 26 solo se corrigen errores y se prepara la demostración.
+- **Evaluación 2: martes 27 y miércoles 28 de octubre.**
 
-## Qué falta (resumen)
+## Qué ya está hecho en `main`
 
-La app hoy solo muestra un "Hello Android". Falta toda la funcionalidad: estructura MVVM, navegación, login con roles, formulario de muestra, base de datos, fotos, historial, filtros y revisión del supervisor.
+- Proyecto Android con Kotlin, Jetpack Compose y Material 3, con la paleta AquaSample en `ui/theme`.
+- Estructura MVVM: `model`, `data`, `viewmodel`, `ui/screens`, `ui/components`, `ui/navigation`.
+- Navegación con Navigation Compose: Login → Inicio → Nueva muestra → Conteo → Resumen, más Historial.
+- Login con roles (Operador y Supervisor) y usuarios ficticios: `operador1`, `operador2`, `supervisor1` (clave `1234`).
+- Formulario de muestra con validación de campos y mensajes de error (centro, tren, línea, fecha, hora, tramo).
+- Conteo manual de individuos con calibre opcional (RF06) y pantalla de resumen.
+- Historial con filtros por centro, línea y estado; el operador ve solo sus muestras.
+- `MuestraViewModel` ya tiene `aprobar()` y `solicitarCorreccion()` (lógica del supervisor), pero todavía sin pantalla.
+- Datos ficticios en memoria (`DatosFicticios` y `MuestraRepository`).
+- Diseños en `docs/diseno/` (logo, 4 wireframes, flujo UML) y evidencia de clase 2 en `docs/evidencias/clase-02/`.
 
-## Prioridad del equipo (pizarra)
+Nota: todo lo anterior hay que confirmarlo corriendo la app en el emulador antes de darlo por cerrado (tarea 0.1).
 
-1. Base de datos Room (SQLite)
-2. Filtros y búsquedas
-3. Fotografías y galería de imágenes
+## Qué falta
 
-Orden de trabajo: primero Room, porque filtros y fotos dependen de ella.
+Persistencia (Room), fotografías, búsqueda por texto, pantallas del supervisor, exportación simulada y la documentación final. Hoy los datos viven solo en memoria y se pierden al cerrar la app.
 
-## Tareas por bloque
+## Tareas pendientes por bloque
 
-### 0. Base del proyecto
+### 0. Verificación general
 
-| # | Tarea | Requerimiento | Propuesto |
-|---|---|---|---|
-| 0.1 | Verificar que el proyecto compila y corre en emulador | RNF Compatibilidad | Todos |
-| 0.2 | Crear estructura de paquetes MVVM: `data`, `domain`/`model`, `ui`, `viewmodel` | RNF Mantenibilidad | Javier |
-| 0.3 | Mover dependencias sueltas de `app/build.gradle.kts` a `libs.versions.toml` | | Javier |
-| 0.4 | Navegación entre pantallas con `navigation-compose` | | Daniel |
+| # | Tarea | Propuesto |
+|---|---|---|
+| 0.1 | Probar la app de `main` en emulador: flujo completo con `operador1` y con `supervisor1`; rotar la pantalla a mitad de un registro (RNF Confiabilidad) | Todos |
+| 0.2 | Sacar capturas de las pantallas a `docs/capturas/` y actualizar el README (hoy dice "Pendiente") | Vicente |
+| 0.3 | Mover dependencias sueltas de `app/build.gradle.kts` a `libs.versions.toml` | Javier |
 
-### 1. Base de datos Room (prioridad 1)
-
-| # | Tarea | Requerimiento | Propuesto |
-|---|---|---|---|
-| 1.1 | Agregar dependencias de Room y KSP (verificar compatibilidad con AGP 9) | RF07 | Cristobal |
-| 1.2 | Entidad `Muestra`: centro, tren, línea, fecha, hora, tramo, conteo, observaciones, estado, operador, `fotoUri` | RF02, RF03 | Cristobal |
-| 1.3 | Entidad `Usuario` con rol (Operador, Supervisor) | RF01 | Cristobal |
-| 1.4 | DAO con insertar, actualizar, listar y consultar por id | RF07 | Cristobal |
-| 1.5 | `AppDatabase` y `MuestraRepository` | RF07, MVVM | Cristobal |
-| 1.6 | Datos de prueba ficticios (usuarios, centros, trenes, líneas, muestras) | Privacidad | Vicente |
-
-### 2. Pantallas y flujo
+### 1. Base de datos Room (prioridad 1, bloquea los bloques 3, 4 y 5)
 
 | # | Tarea | Requerimiento | Propuesto |
 |---|---|---|---|
-| 2.1 | Pantalla de Login con usuarios ficticios y carga del rol | RF01 | Daniel |
-| 2.2 | Home Operador: formulario "Nueva muestra" según wireframe 2 | RF02, RF03 | Daniel |
-| 2.3 | Validación de campos obligatorios con mensajes de error | RF05 | Vicente |
-| 2.4 | `MuestraViewModel` con estado del formulario y envío a revisión | RF02, RF05 | Cristobal |
-| 2.5 | Que el registro en curso no se pierda al rotar o cambiar de pantalla | RNF Confiabilidad | Cristobal |
-| 2.6 | Pantalla "Mis envíos" del operador | RF07 | Daniel |
-| 2.7 | Limitar acciones según el rol | RNF Seguridad | Javier |
+| 1.1 | Agregar dependencias de Room y KSP; hacer Sync y verificar compatibilidad con AGP 9.4.1 y Kotlin 2.2.10 | RF07 | Cristobal |
+| 1.2 | `MuestraEntity` (incluye `fotoUri` desde el inicio) y `UsuarioEntity`, con funciones que las convierten al modelo actual | RF01, RF02, RF03 | Cristobal |
+| 1.3 | DAO con insertar, actualizar, listar y consultar por id | RF07 | Cristobal |
+| 1.4 | `AppDatabase` y conectar `MuestraRepository` a Room **sin cambiar su interfaz**, para no romper las pantallas | RF07, MVVM | Cristobal |
+| 1.5 | Poblar la base con los datos ficticios existentes la primera vez que se abre la app | Privacidad | Vicente |
 
-### 3. Filtros y búsquedas (prioridad 2)
+### 2. Filtros y búsqueda (prioridad 2)
 
 | # | Tarea | Requerimiento | Propuesto |
 |---|---|---|---|
-| 3.1 | Consultas en el DAO: por centro, línea, fecha, operador y estado | RF08 | Cristobal |
-| 3.2 | Barra de búsqueda en el historial | RF08 | Daniel |
-| 3.3 | Filtros (chips o menú) por centro, línea, fecha y estado | RF08 | Daniel |
-| 3.4 | Estado vacío cuando no hay resultados | Usabilidad | Daniel |
+| 2.1 | Consultas en el DAO por centro, línea, fecha, operador y estado | RF08 | Cristobal |
+| 2.2 | Agregar filtro por fecha al Historial (hoy filtra por centro, línea y estado) | RF08 | Daniel |
+| 2.3 | Barra de búsqueda de texto en el Historial | RF08 | Daniel |
+| 2.4 | Estado vacío cuando no hay resultados | Usabilidad | Daniel |
 
-### 4. Fotografías y galería (prioridad 3)
+### 3. Fotografías y galería (prioridad 3)
 
 | # | Tarea | Requerimiento | Propuesto |
 |---|---|---|---|
-| 4.1 | Permiso de cámara y `FileProvider` en el manifest | RF04 | Javier |
-| 4.2 | Tomar foto con la cámara | RF04 | Javier |
-| 4.3 | Elegir imagen desde la galería | RF04 | Javier |
-| 4.4 | Guardar la URI de la foto en la muestra | RF04, Trazabilidad | Cristobal |
-| 4.5 | Mostrar la foto en el formulario y en el detalle del supervisor | RF04 | Daniel |
-| 4.6 | Validar que la muestra no se envíe sin foto | RF05 | Vicente |
+| 3.1 | Permiso de cámara y `FileProvider` en el manifest | RF04 | Javier |
+| 3.2 | Tomar foto con la cámara y elegir imagen desde la galería | RF04 | Javier |
+| 3.3 | Guardar la URI de la foto en la muestra (campo `fotoUri`) | RF04, Trazabilidad | Cristobal |
+| 3.4 | Mostrar la foto en el formulario, en el resumen y en el detalle del supervisor | RF04 | Daniel |
+| 3.5 | No permitir enviar la muestra sin foto | RF05 | Vicente |
 
 Importante: usar solo imágenes de prueba, sin personas ni datos identificables.
 
-### 5. Revisión del supervisor
+### 4. Revisión del supervisor
+
+La lógica base ya existe en el ViewModel. Faltan las pantallas y la ruta en la navegación.
 
 | # | Tarea | Requerimiento | Propuesto |
 |---|---|---|---|
-| 5.1 | Home Supervisor: bandeja de muestras pendientes (wireframe 3) | RF09 | Daniel |
-| 5.2 | Detalle de validación con datos y fotografía (wireframe 4) | RF09 | Daniel |
-| 5.3 | Cambiar estado: pendiente, observado, corregido, validado | RF09 | Cristobal |
-| 5.4 | Campo de observación del supervisor | RF09 | Cristobal |
+| 4.1 | Home Supervisor: bandeja de muestras pendientes (wireframe 3) y su ruta en `Rutas` | RF09 | Daniel |
+| 4.2 | Detalle de validación con datos y fotografía (wireframe 4) | RF09 | Daniel |
+| 4.3 | Conectar los botones Aprobar y Solicitar corrección a `aprobar()` y `solicitarCorreccion()`; guardar el cambio en Room | RF09 | Cristobal |
+| 4.4 | El operador puede corregir una muestra observada y reenviarla (estado Corregido) | RF09 | Cristobal |
+| 4.5 | Limitar acciones según el rol (el supervisor no crea muestras, el operador no valida) | RNF Seguridad | Javier |
 
-### 6. Cierre del MVP
+### 5. Cierre del MVP
 
 | # | Tarea | Requerimiento | Propuesto |
 |---|---|---|---|
-| 6.1 | Pantalla de resumen final de la muestra | RF10 | Daniel |
-| 6.2 | Exportación simulada a planilla (CSV o mensaje de prueba) | RF10 | Cristobal |
-| 6.3 | Probar escenarios: muestra completa, campos faltantes, foto pendiente, observada, validada | Caso, punto 4.4 | Vicente |
-| 6.4 | Corregir la evidencia de clase 2 (tiene contenido de otro caso: centros de cultivo, id, nombre, ubicación, producción, encargado) | | Javier |
-| 6.5 | Preparar la demostración: qué hace la app, qué problema resuelve y qué queda fuera del MVP | | Todos |
+| 5.1 | Exportación simulada a planilla (CSV o mensaje de prueba) | RF10 | Cristobal |
+| 5.2 | Probar escenarios: muestra completa, campos faltantes, foto pendiente, observada, validada | Caso, punto 4.4 | Vicente |
+| 5.3 | Revisar la evidencia de clase 2 del repo: debe ser la versión de Operador/Supervisor (la anterior tenía contenido de otro caso: centros de cultivo, producción, encargado) | | Javier |
+| 5.4 | Preparar la demostración: qué hace la app, qué problema resuelve y qué queda fuera del MVP | | Todos |
 
-Opcional si sobra tiempo: perfil Analista de reportes, gráficos simples, calibre y peso (RF06).
+Opcional si sobra tiempo: perfil Analista de reportes, gráficos simples.
 
 ## Reglas del equipo
 
-- Commits chicos y con mensaje claro, por ejemplo `feat(db): agrega entidad Muestra y DAO`
-- Una tarea por commit cuando se pueda
+- Una rama por tarea (`feature/room-database`, `feature/fotos`, etc.), PR hacia `main` y revisión de otra persona. Nunca `push --force`.
+- Commits chicos y con mensaje claro, por ejemplo `feat(db): agrega entidad Muestra y DAO`.
+- Antes de subir, verificar que el proyecto compila.
+- Antes de empezar una rama nueva: `git checkout main` y `git pull origin main`.
 - Todos los datos y fotos son ficticios. No subir información real de ALDEMAR ni de personas.
-- No afirmar que la app cuenta automáticamente: el conteo es manual
-- Antes de subir, verificar que el proyecto compila
+- No afirmar que la app cuenta automáticamente: el conteo es manual.
 
 ## Dependencias entre tareas
 
-- Bloque 1 (Room) antes de los bloques 3, 4.4 y 5
-- 0.2 (estructura MVVM) antes de todo lo demás
-- 2.2 (formulario) antes de 4.5 (mostrar foto)
+- Room (bloque 1) antes de las consultas (2.1), de guardar la foto (3.3) y de persistir el estado del supervisor (4.3).
+- Formulario (ya hecho) antes de mostrar la foto (3.4).
+- Bandeja del supervisor (4.1) antes del detalle (4.2).
+
+## Calendario sugerido
+
+- **Esta semana (hasta el 18):** mergear lo pendiente, probar la app (0.1), capturas y README (0.2), 5.3, y que Cristobal deje listas las dependencias de Room (1.1).
+- **Semana del 19 al 23 (última de desarrollo):** Room, filtros y fotos en paralelo, supervisor y CSV. Todo mergeado a `main` el viernes 23.
+- **Del 24 al 26:** pruebas de escenarios, corrección de errores y ensayo de la demostración.
+- **27 y 28:** Evaluación 2.
