@@ -18,5 +18,7 @@ data class Muestra(
     val conteo: Conteo,
     val observaciones: String = "",
     val estado: EstadoRevision = EstadoRevision.PENDIENTE,
-    val comentarioSupervisor: String? = null
+    val comentarioSupervisor: String? = null,
+    /** Ruta de la foto de la muestra (cámara o galería). Se usa en la etapa de fotografías. */
+    val fotoUri: String? = null
 )
