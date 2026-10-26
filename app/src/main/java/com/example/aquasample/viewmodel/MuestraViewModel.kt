@@ -20,7 +20,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 /** Campos que se validan, para mostrar el error debajo del campo correcto. */
-enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, INDIVIDUOS, CALIBRE }
+enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, INDIVIDUOS, CALIBRE, FOTO }
 
 /**
  * Estado compartido por las pantallas Nueva muestra → Conteo → Resumen.
@@ -40,6 +40,7 @@ data class MuestraUiState(
     val individuos: Int = 0,
     val calibre: String = "",
     val observaciones: String = "",
+    val fotoUri: String? = null,
     val errores: Map<CampoMuestra, String> = emptyMap(),
     val muestraEnviada: Muestra? = null
 ) {
@@ -128,6 +129,11 @@ class MuestraViewModel(
 
     fun onObservacionesChange(valor: String) {
         _uiState.update { it.copy(observaciones = valor) }
+    }
+
+    /* Guarda la ruta de la foto elegida (o null si se quitó) y borra el error de foto.*/
+    fun onFotoChange(ruta: String?){
+        _uiState.update { it.copy(fotoUri = ruta, errores = it.errores - CampoMuestra.FOTO) }
     }
 
     /**
@@ -219,7 +225,8 @@ class MuestraViewModel(
             tramoMetros = estado.tramoMetros!!,
             operador = operador,
             conteo = Conteo(individuos = estado.individuos, calibrePromedioMm = estado.calibreMm),
-            observaciones = estado.observaciones.trim()
+            observaciones = estado.observaciones.trim(),
+            fotoUri = estado.fotoUri
         )
         repositorio.guardar(muestra)
         _uiState.update { it.copy(muestraEnviada = muestra) }
