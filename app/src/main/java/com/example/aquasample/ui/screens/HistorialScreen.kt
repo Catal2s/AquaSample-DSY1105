@@ -1,5 +1,8 @@
 package com.example.aquasample.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -21,10 +25,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aquasample.data.DatosFicticios
+import com.example.aquasample.data.exportarMuestrasCsv
 import com.example.aquasample.model.EstadoRevision
 import com.example.aquasample.model.Rol
 import com.example.aquasample.ui.components.CampoTexto
@@ -49,6 +55,22 @@ fun HistorialScreen(
     // El operador solo consulta sus muestras; el supervisor consulta todas.
     LaunchedEffect(usuario.id) {
         historialViewModel.limitarAOperador(if (esOperador) usuario.id else null)
+    }
+
+    // Recurso del dispositivo: selector de documentos de Android para elegir dónde guardar el CSV.
+    val contexto = LocalContext.current
+    val selectorDeArchivo = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { destino ->
+        if (destino != null) {
+            val exportadas = exportarMuestrasCsv(contexto, destino, estado.muestras)
+            val mensaje = if (exportadas >= 0) {
+                "Se exportaron $exportadas muestras"
+            } else {
+                "No se pudo guardar el archivo"
+            }
+            Toast.makeText(contexto, mensaje, Toast.LENGTH_LONG).show()
+        }
     }
 
     LazyColumn(
@@ -170,6 +192,17 @@ fun HistorialScreen(
                         Text("Limpiar filtros")
                     }
                 }
+            }
+        }
+
+        // Exporta lo que se ve en pantalla: si hay filtros, solo las muestras filtradas.
+        item {
+            OutlinedButton(
+                onClick = { selectorDeArchivo.launch("muestras_aquasample.csv") },
+                enabled = estado.muestras.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Exportar a CSV")
             }
         }
 
