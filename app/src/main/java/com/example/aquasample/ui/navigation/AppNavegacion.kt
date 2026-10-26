@@ -20,13 +20,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.aquasample.R
 import com.example.aquasample.model.Rol
+import com.example.aquasample.ui.screens.BandejaSupervisorScreen
 import com.example.aquasample.ui.screens.ConteoScreen
+import com.example.aquasample.ui.screens.DetalleMuestraScreen
 import com.example.aquasample.ui.screens.HistorialScreen
 import com.example.aquasample.ui.screens.InicioScreen
 import com.example.aquasample.ui.screens.LoginScreen
@@ -54,6 +58,8 @@ fun AquaSampleApp() {
     val rutaActual = entradaActual?.destination?.route ?: Rutas.LOGIN
     val sesionIniciada = loginEstado.sesionIniciada
     val esOperador = loginEstado.usuarioActual?.rol == Rol.OPERADOR
+    // Inicio del operador o Bandeja del supervisor: la base de la pila al cambiar de pestaña.
+    val rutaInicio = Rutas.inicioDe(loginEstado.usuarioActual?.rol)
 
     Scaffold(
         topBar = {
@@ -71,21 +77,21 @@ fun AquaSampleApp() {
             )
         },
         bottomBar = {
-            // Operador: Inicio, Nueva muestra e Historial. Supervisor: Inicio e Historial.
+            // Operador: Inicio, Nueva muestra e Historial. Supervisor: Bandeja e Historial.
             if (sesionIniciada && rutaActual != Rutas.LOGIN) {
                 BarraNavegacion(
                     rutaActual = rutaActual,
-                    mostrarNuevaMuestra = esOperador,
+                    esOperador = esOperador,
                     onInicio = {
-                        navController.navigate(Rutas.INICIO) {
-                            popUpTo(Rutas.INICIO)
+                        navController.navigate(rutaInicio) {
+                            popUpTo(rutaInicio)
                             launchSingleTop = true
                         }
                     },
                     onNuevaMuestra = { navController.abrirNuevaMuestra(muestraViewModel) },
                     onHistorial = {
                         navController.navigate(Rutas.HISTORIAL) {
-                            popUpTo(Rutas.INICIO)
+                            popUpTo(rutaInicio)
                             launchSingleTop = true
                         }
                     }
@@ -103,7 +109,15 @@ fun AquaSampleApp() {
             composable(Rutas.NUEVA_MUESTRA) { NuevaMuestraScreen(muestraViewModel, navController) }
             composable(Rutas.CONTEO) { ConteoScreen(muestraViewModel, navController) }
             composable(Rutas.RESUMEN) { ResumenScreen(loginViewModel, muestraViewModel, navController) }
-            composable(Rutas.HISTORIAL) { HistorialScreen(loginViewModel, historialViewModel) }
+            composable(Rutas.HISTORIAL) { HistorialScreen(loginViewModel, historialViewModel, navController) }
+            composable(Rutas.BANDEJA) { BandejaSupervisorScreen(loginViewModel, muestraViewModel, navController) }
+            composable(
+                route = Rutas.DETALLE,
+                arguments = listOf(navArgument(Rutas.ARG_ID_MUESTRA) { type = NavType.IntType })
+            ) { entrada ->
+                val idMuestra = entrada.arguments?.getInt(Rutas.ARG_ID_MUESTRA) ?: 0
+                DetalleMuestraScreen(idMuestra, muestraViewModel, loginViewModel)
+            }
         }
     }
 }
@@ -132,19 +146,21 @@ private fun BarraSuperior(
         Rutas.CONTEO -> "Conteo"
         Rutas.RESUMEN -> "Resumen"
         Rutas.HISTORIAL -> "Historial"
+        Rutas.BANDEJA -> "Bandeja de revisión"
+        Rutas.DETALLE -> "Detalle de muestra"
         else -> "AquaSample"
     }
     TopAppBar(
         title = { Text(titulo) },
         navigationIcon = {
-            if (rutaActual == Rutas.CONTEO || rutaActual == Rutas.RESUMEN) {
+            if (rutaActual == Rutas.CONTEO || rutaActual == Rutas.RESUMEN || rutaActual == Rutas.DETALLE) {
                 IconButton(onClick = onVolver) {
                     Icon(painterResource(R.drawable.ic_volver), contentDescription = "Volver")
                 }
             }
         },
         actions = {
-            if (rutaActual == Rutas.INICIO) {
+            if (rutaActual == Rutas.INICIO || rutaActual == Rutas.BANDEJA) {
                 IconButton(onClick = onCerrarSesion) {
                     Icon(painterResource(R.drawable.ic_cerrar_sesion), contentDescription = "Cerrar sesión")
                 }
@@ -162,19 +178,19 @@ private fun BarraSuperior(
 @Composable
 private fun BarraNavegacion(
     rutaActual: String,
-    mostrarNuevaMuestra: Boolean,
+    esOperador: Boolean,
     onInicio: () -> Unit,
     onNuevaMuestra: () -> Unit,
     onHistorial: () -> Unit
 ) {
     NavigationBar {
         ItemBarra(
-            texto = "Inicio",
-            icono = R.drawable.ic_inicio,
-            seleccionado = rutaActual == Rutas.INICIO,
+            texto = if (esOperador) "Inicio" else "Bandeja",
+            icono = if (esOperador) R.drawable.ic_inicio else R.drawable.ic_bandeja,
+            seleccionado = rutaActual == Rutas.INICIO || rutaActual == Rutas.BANDEJA,
             onClick = onInicio
         )
-        if (mostrarNuevaMuestra) {
+        if (esOperador) {
             ItemBarra(
                 texto = "Nueva muestra",
                 icono = R.drawable.ic_agregar,

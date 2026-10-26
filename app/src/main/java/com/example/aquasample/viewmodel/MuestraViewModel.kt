@@ -241,6 +241,12 @@ class MuestraViewModel(
         repositorio.actualizarEstado(idMuestra, EstadoRevision.OBSERVADO, comentario.trim())
     }
 
+    /** El operador avisa que corrigió una muestra observada; vuelve a la bandeja del supervisor. */
+    fun marcarCorregida(idMuestra: Int) {
+        val actual = muestras.value.find { it.id == idMuestra } ?: return
+        repositorio.actualizarEstado(idMuestra, EstadoRevision.CORREGIDO, actual.comentarioSupervisor)
+    }
+
     // ---------- Apoyo ----------
 
     /** La fecha y la hora parten con el momento actual del teléfono. */
