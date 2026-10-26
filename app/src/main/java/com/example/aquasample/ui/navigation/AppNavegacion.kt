@@ -116,7 +116,7 @@ fun AquaSampleApp() {
                 arguments = listOf(navArgument(Rutas.ARG_ID_MUESTRA) { type = NavType.IntType })
             ) { entrada ->
                 val idMuestra = entrada.arguments?.getInt(Rutas.ARG_ID_MUESTRA) ?: 0
-                DetalleMuestraScreen(idMuestra, muestraViewModel)
+                DetalleMuestraScreen(idMuestra, muestraViewModel, loginViewModel)
             }
         }
     }
