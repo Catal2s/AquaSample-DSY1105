@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.update
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 /** Campos que se validan, para mostrar el error debajo del campo correcto. */
 enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, INDIVIDUOS, CALIBRE }
@@ -97,6 +98,30 @@ class MuestraViewModel(
         _uiState.update { it.copy(hora = valor, errores = it.errores - CampoMuestra.HORA) }
     }
 
+    /** Recibe el día elegido en el calendario (DatePicker), que viene en milisegundos UTC. */
+    fun onFechaElegida(millisUtc: Long) {
+        onFechaChange(formatoFecha(utc = true).format(Date(millisUtc)))
+    }
+
+    /** Recibe la hora elegida en el reloj (TimePicker). */
+    fun onHoraElegida(hora: Int, minuto: Int) {
+        onHoraChange(String.format(Locale.US, "%02d:%02d", hora, minuto))
+    }
+
+    /** Fecha del formulario en milisegundos UTC, para que el calendario parta en ese día. */
+    fun fechaEnMillis(): Long? = fechaAMillisUtc(_uiState.value.fecha)
+
+    /** Hoy en milisegundos UTC: el calendario no deja elegir días posteriores. */
+    fun hoyEnMillis(): Long = fechaAMillisUtc(hoy()) ?: Long.MAX_VALUE
+
+    /** Hora y minuto del formulario, para que el reloj parta en esa hora. */
+    fun horaYMinuto(): Pair<Int, Int> {
+        val hora = _uiState.value.hora.trim()
+        if (!horaValida(hora)) return 0 to 0
+        val partes = hora.split(":")
+        return partes[0].toInt() to partes[1].toInt()
+    }
+
     fun onTramoChange(valor: String) {
         _uiState.update { it.copy(tramo = valor, errores = it.errores - CampoMuestra.TRAMO) }
     }
@@ -116,8 +141,15 @@ class MuestraViewModel(
         if (estado.centro == null) errores[CampoMuestra.CENTRO] = "Selecciona un centro"
         if (estado.tren == null) errores[CampoMuestra.TREN] = "Selecciona un tren"
         if (estado.linea == null) errores[CampoMuestra.LINEA] = "Selecciona una línea"
-        if (!fechaValida(estado.fecha)) errores[CampoMuestra.FECHA] = "Usa el formato AAAA-MM-DD"
-        if (!horaValida(estado.hora)) errores[CampoMuestra.HORA] = "Usa el formato HH:MM"
+        // La muestra se registra en terreno, así que no puede tener fecha ni hora futuras.
+        // Como el formato es AAAA-MM-DD y HH:MM, se pueden comparar como texto.
+        val hoy = hoy()
+        val fecha = estado.fecha.trim()
+        val hora = estado.hora.trim()
+        if (!fechaValida(fecha)) errores[CampoMuestra.FECHA] = "Usa el formato AAAA-MM-DD"
+        else if (fecha > hoy) errores[CampoMuestra.FECHA] = "La fecha no puede ser posterior a hoy"
+        if (!horaValida(hora)) errores[CampoMuestra.HORA] = "Usa el formato HH:MM"
+        else if (fecha == hoy && hora > horaActual()) errores[CampoMuestra.HORA] = "La hora no puede ser posterior a la actual"
 
         val tramo = estado.tramoMetros
         if (tramo == null || tramo <= 0) errores[CampoMuestra.TRAMO] = "Ingresa un largo de tramo mayor a 0"
@@ -211,19 +243,26 @@ class MuestraViewModel(
 
     // ---------- Apoyo ----------
 
-    private fun estadoInicial(): MuestraUiState {
-        val ahora = reloj()
-        return MuestraUiState(
-            fecha = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(ahora),
-            hora = SimpleDateFormat("HH:mm", Locale.US).format(ahora)
-        )
+    /** La fecha y la hora parten con el momento actual del teléfono. */
+    private fun estadoInicial(): MuestraUiState = MuestraUiState(fecha = hoy(), hora = horaActual())
+
+    private fun hoy(): String = formatoFecha().format(reloj())
+
+    private fun horaActual(): String = SimpleDateFormat("HH:mm", Locale.US).format(reloj())
+
+    /** El DatePicker trabaja en UTC; el resto de la app en la zona horaria del teléfono. */
+    private fun formatoFecha(utc: Boolean = false) = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+        isLenient = false
+        if (utc) timeZone = TimeZone.getTimeZone("UTC")
     }
 
-    private fun fechaValida(fecha: String): Boolean {
-        val formato = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
-        return Regex("""\d{4}-\d{2}-\d{2}""").matches(fecha.trim()) &&
-            runCatching { formato.parse(fecha.trim()) }.getOrNull() != null
-    }
+    private fun fechaAMillisUtc(fecha: String): Long? =
+        if (fechaValida(fecha)) runCatching { formatoFecha(utc = true).parse(fecha.trim())?.time }.getOrNull()
+        else null
+
+    private fun fechaValida(fecha: String): Boolean =
+        Regex("""\d{4}-\d{2}-\d{2}""").matches(fecha.trim()) &&
+            runCatching { formatoFecha().parse(fecha.trim()) }.getOrNull() != null
 
     private fun horaValida(hora: String): Boolean {
         val partes = hora.trim().split(":")
