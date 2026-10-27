@@ -198,6 +198,10 @@ class MuestraViewModel(
             if (calibre == null || calibre <= 0) errores[CampoMuestra.CALIBRE] = "El calibre debe ser un número mayor a 0"
         }
 
+        if (estado.fotoUri == null) {
+            errores[CampoMuestra.FOTO] = "Adjunta o toma una foto de la muestra"
+        }
+
         _uiState.update { it.copy(errores = it.errores - DATOS_CONTEO + errores) }
         return errores.isEmpty()
     }
@@ -288,6 +292,6 @@ class MuestraViewModel(
             CampoMuestra.CENTRO, CampoMuestra.TREN, CampoMuestra.LINEA,
             CampoMuestra.FECHA, CampoMuestra.HORA, CampoMuestra.TRAMO
         )
-        val DATOS_CONTEO = setOf(CampoMuestra.INDIVIDUOS, CampoMuestra.CALIBRE)
+        val DATOS_CONTEO = setOf(CampoMuestra.INDIVIDUOS, CampoMuestra.CALIBRE, CampoMuestra.FOTO)
     }
 }
