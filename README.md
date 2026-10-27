@@ -256,6 +256,24 @@ Pruebas: [`pruebas-escenarios.md`](docs/capturas/pruebas-escenarios.md)
 |-|-|
 |![Filtro Observado](docs/capturas/escenario-observada.png)|![Filtro Validado](docs/capturas/escenario-validada.png)|
 
+### Foto de la muestra (recurso del dispositivo)
+
+|Sin foto: no deja avanzar|Resumen con la foto tomada con la cámara|
+|-|-|
+|![Error sin foto](docs/capturas/escenario-sin-foto.png)|![Resumen con foto](docs/capturas/escenario-con-foto.png)|
+
+### Revisión del supervisor
+
+Ciclo completo de una muestra: Pendiente → Observado → Corregido → Validado.
+
+|Bandeja del supervisor|Corrección sin comentario|Corrección solicitada|
+|-|-|-|
+|![Bandeja de revisión](docs/capturas/escenario-bandeja-supervisor.png)|![Error de comentario vacío](docs/capturas/escenario-correccion-sin-comentario.png)|![Muestra observada](docs/capturas/escenario-correccion-solicitada.png)|
+
+|Marcada como corregida por el operador|Aprobada por el supervisor|
+|-|-|
+|![Muestra corregida](docs/capturas/escenario-corregida.png)|![Muestra validada](docs/capturas/escenario-aprobada.png)|
+
 ### Persistencia con Room
 
 Pruebas: [`pruebas-persistencia.md`](docs/capturas/pruebas-persistencia.md). La muestra registrada sigue en el Historial después de cerrar la app por completo y volver a abrirla.
