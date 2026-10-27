@@ -35,6 +35,7 @@ import com.example.aquasample.ui.components.CampoTexto
 import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.viewmodel.CampoMuestra
 import com.example.aquasample.viewmodel.MuestraViewModel
+import com.example.aquasample.ui.components.SelectorFoto
 
 @Composable
 fun ConteoScreen(muestraViewModel: MuestraViewModel, navController: NavController) {
@@ -109,6 +110,12 @@ fun ConteoScreen(muestraViewModel: MuestraViewModel, navController: NavControlle
             ejemplo = "Ej: 45",
             teclado = KeyboardType.Decimal,
             error = estado.errores[CampoMuestra.CALIBRE]
+        )
+
+        SelectorFoto(
+            ruta = estado.fotoUri,
+            onFotoCambiada = muestraViewModel::onFotoChange,
+            error = estado.errores[CampoMuestra.FOTO]
         )
 
         Button(

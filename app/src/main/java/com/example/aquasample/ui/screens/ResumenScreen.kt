@@ -28,6 +28,7 @@ import com.example.aquasample.ui.components.FilaDato
 import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
+import com.example.aquasample.ui.components.FotoMuestra
 
 @Composable
 fun ResumenScreen(
@@ -51,6 +52,8 @@ fun ResumenScreen(
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
+
+        FotoMuestra(estado.fotoUri)
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

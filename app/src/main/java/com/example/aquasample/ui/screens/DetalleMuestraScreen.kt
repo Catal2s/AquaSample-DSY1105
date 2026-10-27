@@ -32,6 +32,7 @@ import com.example.aquasample.ui.components.EtiquetaEstado
 import com.example.aquasample.ui.components.FilaDato
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
+import com.example.aquasample.ui.components.FotoMuestra
 
 /**
  * Detalle de una muestra, al tocarla en Inicio, Historial o la bandeja del supervisor.
@@ -76,6 +77,8 @@ fun DetalleMuestraScreen(
             )
             EtiquetaEstado(muestra.estado)
         }
+
+        FotoMuestra(muestra.fotoUri)
 
         SeccionDetalle("Ubicación y fecha") {
             FilaDato("Centro", muestra.centro.nombre)

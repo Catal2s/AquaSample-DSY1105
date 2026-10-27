@@ -20,7 +20,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 /** Campos que se validan, para mostrar el error debajo del campo correcto. */
-enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, INDIVIDUOS, CALIBRE }
+enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, INDIVIDUOS, CALIBRE, FOTO }
 
 /**
  * Estado compartido por las pantallas Nueva muestra → Conteo → Resumen.
@@ -40,6 +40,7 @@ data class MuestraUiState(
     val individuos: Int = 0,
     val calibre: String = "",
     val observaciones: String = "",
+    val fotoUri: String? = null,
     val errores: Map<CampoMuestra, String> = emptyMap(),
     val muestraEnviada: Muestra? = null
 ) {
@@ -130,6 +131,11 @@ class MuestraViewModel(
         _uiState.update { it.copy(observaciones = valor) }
     }
 
+    /* Guarda la ruta de la foto elegida (o null si se quitó) y borra el error de foto.*/
+    fun onFotoChange(ruta: String?){
+        _uiState.update { it.copy(fotoUri = ruta, errores = it.errores - CampoMuestra.FOTO) }
+    }
+
     /**
      * Se llama al apretar "Siguiente" en Nueva muestra.
      * Si devuelve true, la pantalla puede navegar a Conteo.
@@ -192,6 +198,10 @@ class MuestraViewModel(
             if (calibre == null || calibre <= 0) errores[CampoMuestra.CALIBRE] = "El calibre debe ser un número mayor a 0"
         }
 
+        if (estado.fotoUri == null) {
+            errores[CampoMuestra.FOTO] = "Adjunta o toma una foto de la muestra"
+        }
+
         _uiState.update { it.copy(errores = it.errores - DATOS_CONTEO + errores) }
         return errores.isEmpty()
     }
@@ -219,7 +229,8 @@ class MuestraViewModel(
             tramoMetros = estado.tramoMetros!!,
             operador = operador,
             conteo = Conteo(individuos = estado.individuos, calibrePromedioMm = estado.calibreMm),
-            observaciones = estado.observaciones.trim()
+            observaciones = estado.observaciones.trim(),
+            fotoUri = estado.fotoUri
         )
         repositorio.guardar(muestra)
         _uiState.update { it.copy(muestraEnviada = muestra) }
@@ -281,6 +292,6 @@ class MuestraViewModel(
             CampoMuestra.CENTRO, CampoMuestra.TREN, CampoMuestra.LINEA,
             CampoMuestra.FECHA, CampoMuestra.HORA, CampoMuestra.TRAMO
         )
-        val DATOS_CONTEO = setOf(CampoMuestra.INDIVIDUOS, CampoMuestra.CALIBRE)
+        val DATOS_CONTEO = setOf(CampoMuestra.INDIVIDUOS, CampoMuestra.CALIBRE, CampoMuestra.FOTO)
     }
 }
