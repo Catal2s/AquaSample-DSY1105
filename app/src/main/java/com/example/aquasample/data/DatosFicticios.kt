@@ -18,7 +18,8 @@ object DatosFicticios {
     val usuarios = listOf(
         Usuario(id = "U1", nombre = "Operador Demo 01", usuario = "operador1", clave = "1234", rol = Rol.OPERADOR),
         Usuario(id = "U2", nombre = "Operador Demo 02", usuario = "operador2", clave = "1234", rol = Rol.OPERADOR),
-        Usuario(id = "U3", nombre = "Supervisor Demo", usuario = "supervisor1", clave = "1234", rol = Rol.SUPERVISOR)
+        Usuario(id = "U3", nombre = "Supervisor Demo", usuario = "supervisor1", clave = "1234", rol = Rol.SUPERVISOR),
+        Usuario(id = "U4", nombre = "Analista Demo", usuario = "analista1", clave = "1234", rol = Rol.ANALISTA)
     )
 
     val centros = listOf(

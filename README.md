@@ -1,6 +1,6 @@
 # AquaSample
 
-Aplicación móvil para registrar y validar muestras de terreno en Aldemar SpA, con dos roles: **Operador de Muestreo** y **Supervisor Técnico** (MVP académico — DSY1105, La Brigada Fantasma).
+Aplicación móvil para registrar y validar muestras de terreno en Aldemar SpA, con tres roles: **Operador de Muestreo**, **Supervisor Técnico** y **Analista de Datos** (MVP académico — DSY1105, La Brigada Fantasma).
 
 ## Problema que aborda
 
@@ -27,7 +27,7 @@ La lista detallada de pendientes también está en [`TAREAS_P3.md`](TAREAS_P3.md
 
 ## Funcionalidades
 
-* **Login con roles** (Operador y Supervisor) con usuarios ficticios.
+* **Login con roles** (Operador, Supervisor y Analista) con usuarios ficticios.
 * **Registro de muestras** en tres pasos (datos, conteo y resumen), con validación de campos obligatorios y mensajes de error.
 * **Fecha y hora automáticas:** se marcan solas con el reloj del teléfono al abrir el formulario y se actualizan al enviar la muestra; el operador no las escribe.
 * **Conteo manual** de individuos con botones +/− y calibre promedio opcional. La app no cuenta automáticamente.
@@ -117,6 +117,15 @@ Componentes Material 3 utilizados: `Scaffold`, `TopAppBar`, `NavigationBar`, `Ca
 |`operador1`|`1234`|Operador de muestreo|
 |`operador2`|`1234`|Operador de muestreo|
 |`supervisor1`|`1234`|Supervisor técnico|
+|`analista1`|`1234`|Analista de datos|
+
+**Qué puede hacer cada rol:**
+
+|Rol|Pantalla inicial|Puede|
+|-|-|-|
+|Operador|Inicio|Registrar muestras, ver sus propios envíos y marcar como corregida una muestra observada|
+|Supervisor|Bandeja de revisión|Ver todas las muestras, aprobarlas, solicitar corrección y eliminarlas|
+|Analista|Dashboard|Solo consulta: dashboard, historial con filtros y comparador, y exportar a CSV o PDF. No crea ni modifica muestras|
 
 La primera vez que se abre la app se cargan 5 muestras ficticias de ejemplo con distintos estados de revisión, para que Inicio e Historial muestren datos desde el primer ingreso.
 
@@ -179,7 +188,7 @@ En el Historial, el botón **Exportar validadas a PDF (N)** genera un reporte co
 
 Las pruebas siguen la Guía 15 del curso: **Kotest** (`StringSpec`) sobre JUnit 5 para la lógica, **MockK** para simular dependencias, **kotlinx-coroutines-test** (`runTest`) para el código con corrutinas y **Compose UI Test** para las pantallas.
 
-### Pruebas unitarias (`app/src/test`): 132 pruebas
+### Pruebas unitarias (`app/src/test`): 138 pruebas
 
 La tabla resume las del formulario, el historial, el login y la exportación. Las de sincronización, API externa y Room están en `data/sync`, `MuestraRepositorySyncTest` y `CondicionesMarinas*Test`.
 
@@ -187,7 +196,8 @@ La tabla resume las del formulario, el historial, el login y la exportación. La
 |---|---|---|
 | `viewmodel/MuestraViewModelSpec` | 21 | Formulario de muestra: centro → tren → línea, fecha y hora automáticas (se marcan con el reloj y se actualizan al enviar), tramo, conteo, calibre, foto obligatoria, envío a revisión y acciones del supervisor. El repositorio se simula con MockK y se verifica qué se guarda |
 | `viewmodel/HistorialViewModelSpec` | 12 | Búsqueda sin tildes, filtros por operador, fechas, centro, línea y estado, errores de fecha y actualización automática de la lista |
-| `viewmodel/LoginViewModelSpec` | 5 | Campos vacíos, clave incorrecta, detección del rol y cierre de sesión |
+| `viewmodel/LoginViewModelSpec` | 6 | Campos vacíos, clave incorrecta, detección del rol (incluido el Analista) y cierre de sesión |
+| `ui/navigation/RutasSpec` | 5 | Pantalla inicial de cada rol: Operador en Inicio, Supervisor en la Bandeja y Analista en el Dashboard |
 | `data/MuestraRepositorySpec` | 7 | Conversión entre Room y el modelo, siguiente id, guardar y cambiar estado (DAO simulado con MockK), muestras pendientes |
 | `data/ExportadorCsvSpec` | 5 | Formato CSV, celdas con `;`, comillas o fórmulas, y errores al escribir el archivo |
 | `data/ReporteMuestrasSpec` | 6 | Contenido del reporte PDF: solo validadas, columnas, resumen y formato de decimales |
@@ -218,7 +228,7 @@ En Android Studio también se pueden correr con clic derecho sobre la carpeta `t
 
 ### Cobertura (JaCoCo)
 
-**93,5 % de las líneas** de la lógica evaluable (874 de 935), sobre el 90 % exigido.
+**93,5 % de las líneas** de la lógica evaluable (875 de 936), sobre el 90 % exigido.
 
 * Se mide `viewmodel/` y `data/` (ViewModels, Repository, exportación y mapeo de Room).
 * Se excluyen las clases que solo funcionan dentro de Android y que no pueden correr en una prueba unitaria: el código generado por Room, `AppDatabase`, `FotoStorage` (archivos y Bitmap) y `GeneradorPdf` (se prueba en el dispositivo con `GeneradorPdfTest`).

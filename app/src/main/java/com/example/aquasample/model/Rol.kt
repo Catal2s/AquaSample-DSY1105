@@ -1,10 +1,13 @@
 package com.example.aquasample.model
 
 /**
- * Roles de la app. Para el MVP basta con distinguir
- * a quien registra la muestra de quien la revisa.
+ * Roles del caso ALDEMAR:
+ * - OPERADOR registra las muestras en terreno.
+ * - SUPERVISOR las revisa (valida u observa).
+ * - ANALISTA solo consulta: historial, dashboard y reportes. No crea ni modifica muestras.
  */
 enum class Rol(val etiqueta: String) {
     OPERADOR("Operador de muestreo"),
-    SUPERVISOR("Supervisor técnico")
+    SUPERVISOR("Supervisor técnico"),
+    ANALISTA("Analista de datos")
 }

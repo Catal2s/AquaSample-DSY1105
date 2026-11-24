@@ -48,6 +48,16 @@ class LoginViewModelSpec : StringSpec({
         estado.error.shouldBeNull()
     }
 
+    "el usuario analista1 inicia sesión con el rol de Analista" {
+        val viewModel = LoginViewModel()
+        viewModel.onUsuarioChange("analista1")
+        viewModel.onClaveChange("1234")
+
+        viewModel.iniciarSesion().shouldBeTrue()
+
+        viewModel.uiState.value.usuarioActual?.rol shouldBe Rol.ANALISTA
+    }
+
     "al escribir de nuevo se borra el mensaje de error" {
         val viewModel = LoginViewModel()
         viewModel.iniciarSesion()
