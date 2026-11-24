@@ -15,3 +15,8 @@
 local.properties
 
 /.idea/
+
+#firma de la apk: no se sube.
+*.jks
+*.keystore
+keystore.properties
