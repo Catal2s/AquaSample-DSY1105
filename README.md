@@ -23,7 +23,7 @@ AquaSample permite registrar cada muestra con sus datos de trazabilidad (centro,
 
 Las tareas, responsables y avances del equipo se gestionan en Trello: **https://trello.com/b/3lAtfC5W/trello-aquasample**
 
-La lista detallada de pendientes también está en [`TAREAS.md`](TAREAS.md).
+La lista detallada de pendientes también está en [`TAREAS_P3.md`](TAREAS_P3.md).
 
 ## Funcionalidades
 
