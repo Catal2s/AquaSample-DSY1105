@@ -6,7 +6,8 @@ import com.example.aquasample.model.Rol
  * Rutas del NavHost.
  * Operador: Login → Inicio → Nueva muestra → Conteo → Resumen.
  * Supervisor: Login → Bandeja de revisión.
- * Ambos: Historial y Detalle de una muestra.
+ * Analista: Login → Dashboard (solo consulta).
+ * Todos: Historial, Dashboard y Detalle de una muestra.
  */
 object Rutas {
     const val LOGIN = "login"
@@ -24,8 +25,15 @@ object Rutas {
 
     fun detalle(idMuestra: Int) = "detalle/$idMuestra"
 
-    /** Pantalla de inicio según el rol: el supervisor parte en su bandeja de revisión. */
-    fun inicioDe(rol: Rol?) = if (rol == Rol.SUPERVISOR) BANDEJA else INICIO
+    /**
+     * Pantalla de inicio según el rol: el supervisor parte en su bandeja de revisión
+     * y el analista en el dashboard. El operador (o sin sesión) parte en Inicio.
+     */
+    fun inicioDe(rol: Rol?) = when (rol) {
+        Rol.SUPERVISOR -> BANDEJA
+        Rol.ANALISTA -> DASHBOARD
+        Rol.OPERADOR, null -> INICIO
+    }
 
     /** Pantallas que forman parte del registro de una muestra. */
     val FLUJO_MUESTRA = setOf(NUEVA_MUESTRA, CONTEO, RESUMEN)
