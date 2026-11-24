@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.aquasample.model.EstadoRevision
 import com.example.aquasample.model.Rol
+import com.example.aquasample.ui.components.BotonEliminarMuestra
 import com.example.aquasample.ui.components.EstadoVacio
 import com.example.aquasample.ui.components.EtiquetaEstado
 import com.example.aquasample.ui.components.FilaDato
@@ -90,8 +91,13 @@ fun DetalleMuestraScreen(
             FilaDato("Tramo", "${muestra.tramoMetros} m")
         }
 
-        SeccionDetalle("Conteo manual") {
+        SeccionDetalle("Conteo") {
             FilaDato("Individuos", muestra.conteo.individuos.toString())
+            if (muestra.conteo.asistidoPorFoto) {
+                FilaDato("Método", "Asistido por foto (${muestra.conteo.marcasRegistradas} marcas)")
+            } else {
+                FilaDato("Método", "Conteo manual")
+            }
             FilaDato("Calibre promedio", muestra.conteo.calibrePromedioMm?.let { "$it mm" } ?: "No registrado")
             FilaDato("Observaciones", muestra.observaciones.ifBlank { "Sin observaciones" })
         }
@@ -99,6 +105,8 @@ fun DetalleMuestraScreen(
         SeccionDetalle("Registro y revisión") {
             FilaDato("Operador", muestra.operador.nombre)
             FilaDato("Estado", muestra.estado.etiqueta)
+            FilaDato("Sincronización", muestra.estadoSync.etiqueta)
+            muestra.mensajeSync?.let { FilaDato("Motivo", it) }
             FilaDato("Comentario", muestra.comentarioSupervisor?.ifBlank { null } ?: "Sin comentarios del supervisor")
         }
 
@@ -108,9 +116,9 @@ fun DetalleMuestraScreen(
         val porRevisar = muestra.estado == EstadoRevision.PENDIENTE || muestra.estado == EstadoRevision.CORREGIDO
         if (usuario?.rol == Rol.SUPERVISOR && porRevisar) {
             PanelRevision(
-                onAprobar = { muestraViewModel.aprobar(muestra.id) },
+                onAprobar = { muestraViewModel.aprobar(muestra.id, usuario.rol) },
                 onSolicitarCorreccion = { comentario ->
-                    muestraViewModel.solicitarCorreccion(muestra.id, comentario)
+                    muestraViewModel.solicitarCorreccion(muestra.id, comentario, usuario.rol)
                 }
             )
         }
@@ -121,11 +129,15 @@ fun DetalleMuestraScreen(
             muestra.estado == EstadoRevision.OBSERVADO
         ) {
             Button(
-                onClick = { muestraViewModel.marcarCorregida(muestra.id) },
+                onClick = { muestraViewModel.marcarCorregida(muestra.id, usuario.rol) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Marcar como corregida")
             }
+        }
+
+        if (usuario?.rol == Rol.SUPERVISOR) {
+            BotonEliminarMuestra(muestra.id, onEliminar = { muestraViewModel.eliminar(muestra.id, usuario.rol) })
         }
     }
 }

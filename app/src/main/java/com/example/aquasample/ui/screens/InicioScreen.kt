@@ -8,17 +8,27 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.aquasample.R
+import com.example.aquasample.model.EstadoSincronizacion
 import com.example.aquasample.model.Rol
+import com.example.aquasample.ui.components.BannerPendienteSincronizacion
 import com.example.aquasample.ui.components.TarjetaMuestra
 import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.ui.navigation.abrirNuevaMuestra
@@ -59,16 +69,38 @@ fun InicioScreen(
             )
         }
 
+        // Aviso visual: Muestras pendientes de sincronización
+        item {
+            BannerPendienteSincronizacion(
+                cantidadPendientes = muestras.count { it.estadoSync == EstadoSincronizacion.PENDIENTE }
+            )
+        }
+
         if (esOperador) {
             item {
                 Button(
                     onClick = { navController.abrirNuevaMuestra(muestraViewModel) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
+                    Icon(painterResource(R.drawable.ic_agregar), contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text("REGISTRAR NUEVA MUESTRA", fontWeight = FontWeight.Bold)
                 }
+            }
+        }
+
+        item {
+            OutlinedButton(
+                onClick = { navController.navigate(Rutas.DASHBOARD) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(painterResource(R.drawable.ic_dashboard), contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Ver Dashboard y Métricas")
             }
         }
 

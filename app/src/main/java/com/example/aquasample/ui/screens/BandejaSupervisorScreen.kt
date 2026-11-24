@@ -21,6 +21,16 @@ import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.res.painterResource
+import com.example.aquasample.R
+
 /**
  * Home del supervisor (wireframe 3): bandeja con las muestras que esperan revisión,
  * es decir, las Pendientes y las Corregidas por el operador.
@@ -60,6 +70,18 @@ fun BandejaSupervisorScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+
+        item {
+            OutlinedButton(
+                onClick = { navController.navigate(Rutas.DASHBOARD) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(painterResource(R.drawable.ic_dashboard), contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Ver Dashboard y Métricas")
+            }
         }
 
         if (porRevisar.isEmpty()) {

@@ -3,37 +3,60 @@ package com.example.aquasample.ui.screens
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.aquasample.R
 import com.example.aquasample.data.DatosFicticios
 import com.example.aquasample.data.exportarMuestrasCsv
 import com.example.aquasample.model.EstadoRevision
+import com.example.aquasample.model.Muestra
 import com.example.aquasample.model.Rol
+import com.example.aquasample.ui.components.BannerSinInternet
+import com.example.aquasample.ui.components.BotonSincronizar
 import com.example.aquasample.ui.components.CampoTexto
+import com.example.aquasample.ui.components.DialogoCompararMuestras
 import com.example.aquasample.ui.components.EstadoVacio
 import com.example.aquasample.ui.components.TarjetaMuestra
 import com.example.aquasample.ui.navigation.Rutas
@@ -51,6 +74,12 @@ fun HistorialScreen(
     val filtros by historialViewModel.filtros.collectAsState()
     val usuario = loginEstado.usuarioActual ?: return
     val esOperador = usuario.rol == Rol.OPERADOR
+
+    // Modo de comparación entre dos muestras
+    var modoComparar by remember { mutableStateOf(false) }
+    var seleccionadasParaComparar by remember { mutableStateOf(setOf<Int>()) }
+    var muestraA by remember { mutableStateOf<Muestra?>(null) }
+    var muestraB by remember { mutableStateOf<Muestra?>(null) }
 
     // El operador solo consulta sus muestras; el supervisor consulta todas.
     LaunchedEffect(usuario.id) {
@@ -73,163 +102,315 @@ fun HistorialScreen(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Text(
-                text = if (esOperador) "Mis muestras registradas" else "Todas las muestras",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Busca o filtra por fecha, centro, línea o estado de revisión",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        item {
-            OutlinedTextField(
-                value = filtros.texto,
-                onValueChange = historialViewModel::buscar,
-                label = { Text("Buscar muestra") },
-                placeholder = { Text("Ej: #3, línea 2, Sur, fouling") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        // Rango de fechas: se puede llenar solo una (desde o hasta) o ambas.
-        item {
-            Column {
-                Text(
-                    text = "Fecha",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CampoTexto(
-                        valor = filtros.fechaDesde,
-                        onCambio = historialViewModel::onFechaDesdeChange,
-                        etiqueta = "Desde",
-                        error = estado.errorFechaDesde,
-                        ejemplo = "AAAA-MM-DD",
-                        modifier = Modifier.weight(1f)
-                    )
-                    CampoTexto(
-                        valor = filtros.fechaHasta,
-                        onCambio = historialViewModel::onFechaHastaChange,
-                        etiqueta = "Hasta",
-                        error = estado.errorFechaHasta,
-                        ejemplo = "AAAA-MM-DD",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+    // Diálogo emergente de comparación
+    if (muestraA != null && muestraB != null) {
+        DialogoCompararMuestras(
+            muestraA = muestraA!!,
+            muestraB = muestraB!!,
+            onCerrar = {
+                muestraA = null
+                muestraB = null
             }
-        }
+        )
+    }
 
-        item {
-            GrupoFiltros(titulo = "Centro") {
-                FilterChip(
-                    selected = estado.filtros.centro == null,
-                    onClick = { historialViewModel.filtrarPorCentro(null) },
-                    label = { Text("Todos") }
-                )
-                estado.centros.forEach { centro ->
-                    FilterChip(
-                        selected = estado.filtros.centro?.id == centro.id,
-                        onClick = { historialViewModel.filtrarPorCentro(centro) },
-                        label = { Text(centro.nombre) }
-                    )
-                }
-            }
-        }
-
-        // Las líneas aparecen recién al elegir un centro, porque cada línea pertenece a un tren.
-        if (estado.lineasDisponibles.isNotEmpty()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             item {
-                GrupoFiltros(titulo = "Línea") {
-                    estado.lineasDisponibles.forEach { linea ->
-                        val tren = DatosFicticios.trenes.firstOrNull { it.id == linea.trenId }
-                        FilterChip(
-                            selected = estado.filtros.linea?.id == linea.id,
-                            onClick = { historialViewModel.filtrarPorLinea(linea) },
-                            label = { Text(listOfNotNull(tren?.nombre, linea.nombre).joinToString(" · ")) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (esOperador) "Mis muestras registradas" else "Todas las muestras",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Busca o filtra por fecha, centro, línea o estado",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    // Botón para alternar modo comparar
+                    OutlinedButton(
+                        onClick = {
+                            modoComparar = !modoComparar
+                            if (!modoComparar) seleccionadasParaComparar = emptySet()
+                        },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_comparar),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (modoComparar) "Salir" else "Comparar")
+                    }
+                }
+            }
+
+            item { BotonSincronizar() }
+
+            // Banner explicativo si está en modo comparar
+            if (modoComparar) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Modo Comparación activado",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                text = "Selecciona 2 muestras de la lista para comparar la misma línea de cultivo o analizar variaciones entre períodos.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                OutlinedTextField(
+                    value = filtros.texto,
+                    onValueChange = historialViewModel::buscar,
+                    label = { Text("Buscar muestra") },
+                    placeholder = { Text("Ej: #3, línea 2, Sur, fouling") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
+            }
+
+            // Rango de fechas: se puede llenar solo una (desde o hasta) o ambas.
+            item {
+                Column {
+                    Text(
+                        text = "Fecha",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CampoTexto(
+                            valor = filtros.fechaDesde,
+                            onCambio = historialViewModel::onFechaDesdeChange,
+                            etiqueta = "Desde",
+                            error = estado.errorFechaDesde,
+                            ejemplo = "AAAA-MM-DD",
+                            modifier = Modifier.weight(1f)
+                        )
+                        CampoTexto(
+                            valor = filtros.fechaHasta,
+                            onCambio = historialViewModel::onFechaHastaChange,
+                            etiqueta = "Hasta",
+                            error = estado.errorFechaHasta,
+                            ejemplo = "AAAA-MM-DD",
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
             }
-        }
 
-        item {
-            GrupoFiltros(titulo = "Estado") {
-                EstadoRevision.entries.forEach { estadoRevision ->
+            item {
+                GrupoFiltros(titulo = "Centro") {
                     FilterChip(
-                        selected = estado.filtros.estado == estadoRevision,
-                        onClick = { historialViewModel.filtrarPorEstado(estadoRevision) },
-                        label = { Text(estadoRevision.etiqueta) }
+                        selected = estado.filtros.centro == null,
+                        onClick = { historialViewModel.filtrarPorCentro(null) },
+                        label = { Text("Todos") }
                     )
-                }
-            }
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${estado.muestras.size} muestras · ${estado.totalIndividuos} individuos",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                if (estado.hayFiltros) {
-                    TextButton(onClick = historialViewModel::limpiarFiltros) {
-                        Text("Limpiar filtros")
+                    estado.centros.forEach { centro ->
+                        FilterChip(
+                            selected = estado.filtros.centro?.id == centro.id,
+                            onClick = { historialViewModel.filtrarPorCentro(centro) },
+                            label = { Text(centro.nombre) }
+                        )
                     }
                 }
             }
-        }
 
-        // Exporta lo que se ve en pantalla: si hay filtros, solo las muestras filtradas.
-        item {
-            OutlinedButton(
-                onClick = { selectorDeArchivo.launch("muestras_aquasample.csv") },
-                enabled = estado.muestras.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Exportar a CSV")
+            // Las líneas aparecen recién al elegir un centro, porque cada línea pertenece a un tren.
+            if (estado.lineasDisponibles.isNotEmpty()) {
+                item {
+                    GrupoFiltros(titulo = "Línea") {
+                        estado.lineasDisponibles.forEach { linea ->
+                            val tren = DatosFicticios.trenes.firstOrNull { it.id == linea.trenId }
+                            FilterChip(
+                                selected = estado.filtros.linea?.id == linea.id,
+                                onClick = { historialViewModel.filtrarPorLinea(linea) },
+                                label = { Text(listOfNotNull(tren?.nombre, linea.nombre).joinToString(" · ")) }
+                            )
+                        }
+                    }
+                }
             }
-        }
 
-        if (estado.muestras.isEmpty()) {
             item {
-                if (estado.hayFiltros) {
-                    EstadoVacio(
-                        titulo = "Sin resultados",
-                        mensaje = "Ninguna muestra coincide con la búsqueda o los filtros elegidos.",
-                        textoAccion = "Limpiar filtros",
-                        onAccion = historialViewModel::limpiarFiltros
+                GrupoFiltros(titulo = "Estado") {
+                    EstadoRevision.entries.forEach { estadoRevision ->
+                        FilterChip(
+                            selected = estado.filtros.estado == estadoRevision,
+                            onClick = { historialViewModel.filtrarPorEstado(estadoRevision) },
+                            label = { Text(estadoRevision.etiqueta) }
+                        )
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${estado.muestras.size} muestras · ${estado.totalIndividuos} individuos",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
                     )
-                } else {
-                    EstadoVacio(
-                        titulo = "Todavía no hay muestras",
-                        mensaje = if (esOperador) "Las muestras que envíes aparecerán aquí." else "Aún no se han registrado muestras."
-                    )
+                    if (estado.hayFiltros) {
+                        TextButton(onClick = historialViewModel::limpiarFiltros) {
+                            Text("Limpiar filtros")
+                        }
+                    }
+                }
+            }
+
+            // Exporta lo que se ve en pantalla: si hay filtros, solo las muestras filtradas.
+            item {
+                OutlinedButton(
+                    onClick = { selectorDeArchivo.launch("muestras_aquasample.csv") },
+                    enabled = estado.muestras.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Exportar a CSV")
+                }
+            }
+
+            if (estado.muestras.isEmpty()) {
+                item {
+                    if (estado.hayFiltros) {
+                        EstadoVacio(
+                            titulo = "Sin resultados",
+                            mensaje = "Ninguna muestra coincide con la búsqueda o los filtros elegidos.",
+                            textoAccion = "Limpiar filtros",
+                            onAccion = historialViewModel::limpiarFiltros
+                        )
+                    } else {
+                        EstadoVacio(
+                            titulo = "Todavía no hay muestras",
+                            mensaje = if (esOperador) "Las muestras que envíes aparecerán aquí." else "Aún no se han registrado muestras."
+                        )
+                    }
+                }
+            }
+
+            items(estado.muestras, key = { it.id }) { muestra ->
+                val estaSeleccionada = seleccionadasParaComparar.contains(muestra.id)
+                TarjetaMuestra(
+                    muestra = muestra,
+                    mostrarOperador = !esOperador,
+                    seleccionable = modoComparar,
+                    seleccionada = estaSeleccionada,
+                    onSeleccionar = {
+                        seleccionadasParaComparar = if (estaSeleccionada) {
+                            seleccionadasParaComparar - muestra.id
+                        } else {
+                            if (seleccionadasParaComparar.size >= 2) {
+                                // Mantiene solo la última elegida más la nueva
+                                setOf(seleccionadasParaComparar.last(), muestra.id)
+                            } else {
+                                seleccionadasParaComparar + muestra.id
+                            }
+                        }
+                    },
+                    onClick = {
+                        if (modoComparar) {
+                            seleccionadasParaComparar = if (estaSeleccionada) {
+                                seleccionadasParaComparar - muestra.id
+                            } else {
+                                if (seleccionadasParaComparar.size >= 2) {
+                                    setOf(seleccionadasParaComparar.last(), muestra.id)
+                                } else {
+                                    seleccionadasParaComparar + muestra.id
+                                }
+                            }
+                        } else {
+                            navController.navigate(Rutas.detalle(muestra.id))
+                        }
+                    }
+                )
+            }
+
+            // Espacio al final si la barra flotante está visible
+            if (modoComparar && seleccionadasParaComparar.size == 2) {
+                item {
+                    Spacer(Modifier.height(72.dp))
                 }
             }
         }
 
-        items(estado.muestras, key = { it.id }) { muestra ->
-            TarjetaMuestra(
-                muestra = muestra,
-                mostrarOperador = !esOperador,
-                onClick = { navController.navigate(Rutas.detalle(muestra.id)) }
-            )
+        // Barra flotante para accionar la comparación de las 2 muestras elegidas
+        if (modoComparar && seleccionadasParaComparar.size == 2) {
+            val listaElegidas = estado.muestras.filter { it.id in seleccionadasParaComparar }
+            if (listaElegidas.size == 2) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    shadowElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "2 muestras listas",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "#${listaElegidas[0].id} vs #${listaElegidas[1].id}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                muestraA = listaElegidas[0]
+                                muestraB = listaElegidas[1]
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text("COMPARAR", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
     }
 }
