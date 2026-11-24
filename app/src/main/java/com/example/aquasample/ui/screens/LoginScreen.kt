@@ -92,7 +92,7 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavController) {
         }
 
         Text(
-            text = "Usuarios de prueba: operador1, operador2 o supervisor1 (clave 1234).\nEl rol se detecta según el usuario.",
+            text = "Usuarios de prueba: operador1, operador2, supervisor1 o analista1 (clave 1234).\nEl rol se detecta según el usuario.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

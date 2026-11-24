@@ -58,9 +58,9 @@ fun AquaSampleApp() {
     val entradaActual by navController.currentBackStackEntryAsState()
     val rutaActual = entradaActual?.destination?.route ?: Rutas.LOGIN
     val sesionIniciada = loginEstado.sesionIniciada
-    val esOperador = loginEstado.usuarioActual?.rol == Rol.OPERADOR
-    // Inicio del operador o Bandeja del supervisor: la base de la pila al cambiar de pestaña.
-    val rutaInicio = Rutas.inicioDe(loginEstado.usuarioActual?.rol)
+    val rol = loginEstado.usuarioActual?.rol
+    // Inicio del operador, Bandeja del supervisor o Dashboard del analista: la base de la pila al cambiar de pestaña.
+    val rutaInicio = Rutas.inicioDe(rol)
 
     Scaffold(
         topBar = {
@@ -78,11 +78,12 @@ fun AquaSampleApp() {
             )
         },
         bottomBar = {
-            // Operador: Inicio, Nueva muestra e Historial. Supervisor: Bandeja e Historial.
+            // Operador: Inicio, Nueva muestra, Historial y Dashboard.
+            // Supervisor: Bandeja, Historial y Dashboard. Analista: Dashboard e Historial.
             if (sesionIniciada && rutaActual != Rutas.LOGIN) {
                 BarraNavegacion(
                     rutaActual = rutaActual,
-                    esOperador = esOperador,
+                    rol = rol,
                     onInicio = {
                         navController.navigate(rutaInicio) {
                             popUpTo(rutaInicio)
@@ -187,19 +188,24 @@ private fun BarraSuperior(
 @Composable
 private fun BarraNavegacion(
     rutaActual: String,
-    esOperador: Boolean,
+    rol: Rol?,
     onInicio: () -> Unit,
     onNuevaMuestra: () -> Unit,
     onHistorial: () -> Unit,
     onDashboard: () -> Unit
 ) {
+    val esOperador = rol == Rol.OPERADOR
     NavigationBar {
-        ItemBarra(
-            texto = if (esOperador) "Inicio" else "Bandeja",
-            icono = if (esOperador) R.drawable.ic_inicio else R.drawable.ic_bandeja,
-            seleccionado = rutaActual == Rutas.INICIO || rutaActual == Rutas.BANDEJA,
-            onClick = onInicio
-        )
+        // El analista no tiene Inicio ni Bandeja: su pantalla principal es el Dashboard.
+        if (rol != Rol.ANALISTA) {
+            ItemBarra(
+                texto = if (esOperador) "Inicio" else "Bandeja",
+                icono = if (esOperador) R.drawable.ic_inicio else R.drawable.ic_bandeja,
+                seleccionado = rutaActual == Rutas.INICIO || rutaActual == Rutas.BANDEJA,
+                onClick = onInicio
+            )
+        }
+        // Solo el operador registra muestras.
         if (esOperador) {
             ItemBarra(
                 texto = "Nueva muestra",
