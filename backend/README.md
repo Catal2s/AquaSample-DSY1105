@@ -66,3 +66,7 @@ backend/src/main/java/com/aquasample/backend/
 ```
 
 El contrato completo de la API está en [`docs/API_CONTRATO.md`](../docs/API_CONTRATO.md).
+
+## Evidencias
+
+Las capturas de Swagger y las pruebas con curl del ciclo de revisión están en [`docs/capturas/backend/README.md`](../docs/capturas/backend/README.md).
