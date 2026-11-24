@@ -153,6 +153,8 @@ val clasesEvaluables = fileTree(layout.buildDirectory.dir("intermediates/built_i
         // Dibuja con PdfDocument (solo existe en Android): se prueba en GeneradorPdfTest (androidTest)
         "com/example/aquasample/data/GeneradorPdf*",
         "com/example/aquasample/data/local/AppDatabase*",
+        // Migración de Room: necesita SQLite de Android, se prueba en MigracionTest (androidTest)
+        "com/example/aquasample/data/local/Migraciones*",
         "**/*_Impl*"
     )
 }
