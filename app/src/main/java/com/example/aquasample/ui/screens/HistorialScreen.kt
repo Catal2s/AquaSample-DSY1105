@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aquasample.data.DatosFicticios
+import com.example.aquasample.data.GeneradorPdf
+import com.example.aquasample.data.ReporteMuestras
 import com.example.aquasample.data.exportarMuestrasCsv
 import com.example.aquasample.model.EstadoRevision
 import com.example.aquasample.model.Rol
@@ -39,6 +41,9 @@ import com.example.aquasample.ui.components.TarjetaMuestra
 import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.viewmodel.HistorialViewModel
 import com.example.aquasample.viewmodel.LoginViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun HistorialScreen(
@@ -68,6 +73,23 @@ fun HistorialScreen(
                 "Se exportaron $exportadas muestras"
             } else {
                 "No se pudo guardar el archivo"
+            }
+            Toast.makeText(contexto, mensaje, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // Reporte PDF con las muestras validadas (de las que se ven en pantalla).
+    val validadasVisibles = ReporteMuestras.validadas(estado.muestras).size
+    val selectorDePdf = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf")
+    ) { destino ->
+        if (destino != null) {
+            val generadoEn = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date())
+            val exportadas = GeneradorPdf.exportar(contexto, destino, estado.muestras, generadoEn)
+            val mensaje = if (exportadas >= 0) {
+                "Reporte PDF con $exportadas muestras validadas"
+            } else {
+                "No se pudo guardar el PDF"
             }
             Toast.makeText(contexto, mensaje, Toast.LENGTH_LONG).show()
         }
@@ -203,6 +225,16 @@ fun HistorialScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Exportar a CSV")
+            }
+        }
+
+        item {
+            OutlinedButton(
+                onClick = { selectorDePdf.launch("reporte_validadas_aquasample.pdf") },
+                enabled = validadasVisibles > 0,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (validadasVisibles > 0) "Exportar validadas a PDF ($validadasVisibles)" else "Sin muestras validadas para PDF")
             }
         }
 
