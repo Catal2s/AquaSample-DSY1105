@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aquasample.R
+import com.example.aquasample.model.EstadoSincronizacion
 import com.example.aquasample.model.Rol
 import com.example.aquasample.ui.components.BannerPendienteSincronizacion
 import com.example.aquasample.ui.components.TarjetaMuestra
@@ -70,7 +71,9 @@ fun InicioScreen(
 
         // Aviso visual: Muestras pendientes de sincronización
         item {
-            BannerPendienteSincronizacion(cantidadPendientes = muestras.size)
+            BannerPendienteSincronizacion(
+                cantidadPendientes = muestras.count { it.estadoSync == EstadoSincronizacion.PENDIENTE }
+            )
         }
 
         if (esOperador) {

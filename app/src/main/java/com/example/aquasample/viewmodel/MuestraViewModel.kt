@@ -8,6 +8,7 @@ import com.example.aquasample.model.Conteo
 import com.example.aquasample.model.EstadoRevision
 import com.example.aquasample.model.Linea
 import com.example.aquasample.model.Muestra
+import com.example.aquasample.model.Rol
 import com.example.aquasample.model.Tren
 import com.example.aquasample.model.Usuario
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -297,18 +298,23 @@ class MuestraViewModel(
 
     // ---------- Supervisor (para la bandeja, siguiente etapa) ----------
 
-    fun aprobar(idMuestra: Int) {
-        repositorio.actualizarEstado(idMuestra, EstadoRevision.VALIDADO)
+    fun aprobar(idMuestra: Int, rol: Rol = Rol.SUPERVISOR) {
+        repositorio.actualizarEstado(idMuestra, EstadoRevision.VALIDADO, rol = rol)
     }
 
-    fun solicitarCorreccion(idMuestra: Int, comentario: String) {
-        repositorio.actualizarEstado(idMuestra, EstadoRevision.OBSERVADO, comentario.trim())
+    fun solicitarCorreccion(idMuestra: Int, comentario: String, rol: Rol = Rol.SUPERVISOR) {
+        repositorio.actualizarEstado(idMuestra, EstadoRevision.OBSERVADO, comentario.trim(), rol)
     }
 
     /** El operador avisa que corrigió una muestra observada; vuelve a la bandeja del supervisor. */
-    fun marcarCorregida(idMuestra: Int) {
+    fun marcarCorregida(idMuestra: Int, rol: Rol = Rol.OPERADOR) {
         val actual = muestras.value.find { it.id == idMuestra } ?: return
-        repositorio.actualizarEstado(idMuestra, EstadoRevision.CORREGIDO, actual.comentarioSupervisor)
+        repositorio.actualizarEstado(idMuestra, EstadoRevision.CORREGIDO, actual.comentarioSupervisor, rol)
+    }
+
+    /** Solo el supervisor puede eliminar (el backend también lo exige). */
+    fun eliminar(idMuestra: Int, rol: Rol) {
+        if (rol == Rol.SUPERVISOR) repositorio.eliminar(idMuestra, rol)
     }
 
     // ---------- Apoyo ----------

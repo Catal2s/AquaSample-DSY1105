@@ -54,6 +54,7 @@ import com.example.aquasample.model.EstadoRevision
 import com.example.aquasample.model.Muestra
 import com.example.aquasample.model.Rol
 import com.example.aquasample.ui.components.BannerSinInternet
+import com.example.aquasample.ui.components.BotonSincronizar
 import com.example.aquasample.ui.components.CampoTexto
 import com.example.aquasample.ui.components.DialogoCompararMuestras
 import com.example.aquasample.ui.components.EstadoVacio
@@ -156,6 +157,8 @@ fun HistorialScreen(
                     }
                 }
             }
+
+            item { BotonSincronizar() }
 
             // Banner explicativo si está en modo comparar
             if (modoComparar) {
