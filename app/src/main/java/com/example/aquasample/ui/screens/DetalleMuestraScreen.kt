@@ -30,6 +30,7 @@ import com.example.aquasample.model.Rol
 import com.example.aquasample.ui.components.EstadoVacio
 import com.example.aquasample.ui.components.EtiquetaEstado
 import com.example.aquasample.ui.components.FilaDato
+import com.example.aquasample.ui.components.TarjetaCondicionesMarinas
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
 import com.example.aquasample.ui.components.FotoMuestra
@@ -100,6 +101,8 @@ fun DetalleMuestraScreen(
             FilaDato("Estado", muestra.estado.etiqueta)
             FilaDato("Comentario", muestra.comentarioSupervisor?.ifBlank { null } ?: "Sin comentarios del supervisor")
         }
+
+        TarjetaCondicionesMarinas(muestra)
 
         // Supervisor: aprueba o pide corrección de las muestras que esperan revisión.
         val porRevisar = muestra.estado == EstadoRevision.PENDIENTE || muestra.estado == EstadoRevision.CORREGIDO
