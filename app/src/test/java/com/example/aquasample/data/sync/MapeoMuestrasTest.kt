@@ -5,6 +5,7 @@ import com.example.aquasample.data.local.aEntidad
 import com.example.aquasample.data.local.aEntidadDeEjemplo
 import com.example.aquasample.data.local.aModelo
 import com.example.aquasample.data.remote.backend.MuestraResponse
+import com.example.aquasample.data.remote.backend.ResumenResponse
 import com.example.aquasample.data.remote.backend.aEntidad
 import com.example.aquasample.data.remote.backend.aRequest
 import com.example.aquasample.model.Conteo
@@ -88,5 +89,17 @@ class MapeoMuestrasTest {
         assertEquals("image/png", tipoDeImagen(bytes(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)))
         assertNull(tipoDeImagen("RIFF".toByteArray()))
         assertNull(tipoDeImagen(ByteArray(0)))
+    }
+
+    @Test
+    fun leeElResumenDelContrato() {
+        val json = """{"totalMuestras":5,"totalIndividuos":1563,"promedioIndividuos":312.6,
+            "muestrasPorEstado":{"CORREGIDO":1,"VALIDADO":2},"muestrasPorCentro":{"C1":3,"C2":2}}"""
+        val resumen = Gson().fromJson(json, ResumenResponse::class.java)
+        assertEquals(5, resumen.totalMuestras)
+        assertEquals(1563L, resumen.totalIndividuos)
+        assertEquals(312.6, resumen.promedioIndividuos!!, 0.0)
+        assertEquals(2, resumen.muestrasPorEstado!!["VALIDADO"])
+        assertEquals(3, resumen.muestrasPorCentro!!["C1"])
     }
 }

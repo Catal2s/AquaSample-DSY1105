@@ -52,6 +52,10 @@ class FakeAquaSampleApi : AquaSampleApi {
     /** El servidor guarda, pero la respuesta del PUT se pierde. */
     var perderRespuestaDelPut = false
     var codigoForzado: Int? = null
+    /** Código de error según la llamada, por ejemplo "FOTO 6 OPERADOR" → 500. null = responde normal. */
+    var fallar: (String) -> Int? = { null }
+    /** Excepción que lanza cualquier llamada, por ejemplo una respuesta que no es JSON. */
+    var excepcion: RuntimeException? = null
     /** Id de muestra cuyo PUT responde 500. */
     var idConError500: Int? = null
 
@@ -62,6 +66,8 @@ class FakeAquaSampleApi : AquaSampleApi {
     private fun <T> responder(llamada: String, accion: () -> Response<T>): Response<T> {
         llamadas += llamada
         if (sinInternet) throw IOException("sin internet")
+        excepcion?.let { throw it }
+        fallar(llamada)?.let { return error(it, "falla $it") }
         codigoForzado?.let { return error(it, "forzado") }
         return accion()
     }

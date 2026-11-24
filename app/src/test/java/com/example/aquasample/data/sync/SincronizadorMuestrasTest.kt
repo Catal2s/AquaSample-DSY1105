@@ -7,6 +7,7 @@ import com.example.aquasample.data.local.aEntidadDeEjemplo
 import com.example.aquasample.data.remote.backend.aRequest
 import com.example.aquasample.model.Rol
 import com.example.aquasample.viewmodel.aMensaje
+import com.google.gson.JsonSyntaxException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
@@ -286,5 +287,103 @@ class SincronizadorMuestrasTest {
         assertTrue(ResultadoSync(porReintentar = 1).aMensaje().contains("falló"))
         assertEquals("Todo está sincronizado", ResultadoSync().aMensaje())
         assertEquals("Enviadas: 1 · Recibidas del servidor: 2", ResultadoSync(1, bajadas = 2).aMensaje())
+    }
+
+    // ---------- Fallas en cada paso del envío ----------
+
+    @Test
+    fun fotoCon500_conservaLaFotoPendienteYNoRepiteElPut() = runTest {
+        val dao = FakeMuestraSyncDao(nueva(6, foto = "/f.jpg"))
+        val sync = sincronizador(dao)
+        api.fallar = { if (it.startsWith("FOTO")) 500 else null }
+        assertFalse(sync.subir().completa)
+        assertFalse(dao.filas[6]!!.datosPendientes)
+        assertTrue(dao.filas[6]!!.fotoPendiente)
+
+        api.fallar = { null }
+        assertEquals(1, sync.subir().enviadas)
+        assertEquals(1, api.llamadas.count { it.startsWith("PUT") })
+        assertEquals(true, api.guardadas[6]!!.tieneFoto)
+    }
+
+    @Test
+    fun fotoRechazada_informaElMotivo() = runTest {
+        val dao = FakeMuestraSyncDao(nueva(6, foto = "/f.jpg"))
+        api.fallar = { if (it.startsWith("FOTO")) 413 else null }
+        assertEquals(listOf("#6: Foto no subida: falla 413"), sincronizador(dao).subir().errores)
+        assertEquals("ERROR", dao.filas[6]!!.estadoSync)
+    }
+
+    @Test
+    fun foto409_siElServidorYaLaTieneNoEsError() = runTest {
+        enServidor(nueva(6), "VALIDADO")
+        api.guardadas[6] = api.guardadas[6]!!.copy(tieneFoto = true)
+        val dao = FakeMuestraSyncDao(nueva(6, foto = "/f.jpg"))
+        api.fallar = { if (it.startsWith("FOTO")) 409 else null }
+        assertEquals(ResultadoSync(enviadas = 1), sincronizador(dao).subir())
+    }
+
+    @Test
+    fun patchCon500_conservaElCambioParaReintentar() = runTest {
+        enServidor(sincronizada(5))
+        val dao = FakeMuestraSyncDao(sincronizada(5))
+        val sync = sincronizador(dao)
+        sync.cambiarEstadoLocal(5, "VALIDADO", null, Rol.SUPERVISOR)
+        api.fallar = { if (it.startsWith("PATCH")) 503 else null }
+        assertEquals(1, sync.subir().porReintentar)
+        assertEquals(1, dao.cambios.size)
+        assertEquals("PENDIENTE", dao.filas[5]!!.estadoSync)
+    }
+
+    @Test
+    fun conflictoCuandoElServidorNoPuedeResponder_seReintenta() = runTest {
+        enServidor(nueva(6).copy(individuos = 999), "VALIDADO")
+        val dao = FakeMuestraSyncDao(nueva(6))
+        api.fallar = { if (it == "GET 6") 500 else null }
+        assertEquals(1, sincronizador(dao).subir().porReintentar)
+        assertEquals("PENDIENTE", dao.filas[6]!!.estadoSync)
+    }
+
+    @Test
+    fun eliminarCon500_sigueOculta_yCon403VuelveAMostrarse() = runTest {
+        enServidor(sincronizada(5))
+        val dao = FakeMuestraSyncDao(sincronizada(5))
+        val sync = sincronizador(dao)
+        sync.eliminarLocal(5, Rol.SUPERVISOR)
+
+        api.fallar = { 500 }
+        assertEquals(1, sync.subir().porReintentar)
+        assertEquals("SUPERVISOR", dao.filas[5]!!.eliminadoPor)
+
+        api.fallar = { 403 }
+        assertEquals(1, sync.subir().errores.size)
+        assertNull(dao.filas[5]!!.eliminadoPor)
+        assertEquals("ERROR", dao.filas[5]!!.estadoSync)
+    }
+
+    @Test
+    fun eliminarUnIdQueNoExisteNoHaceNada() = runTest {
+        sincronizador(FakeMuestraSyncDao()).eliminarLocal(99, Rol.SUPERVISOR)
+        assertTrue(api.llamadas.isEmpty())
+    }
+
+    @Test
+    fun respuestaQueNoEsJson_quedaParaReintentar() = runTest {
+        val dao = FakeMuestraSyncDao(nueva(6))
+        api.excepcion = JsonSyntaxException("<html>")
+        val resultado = sincronizador(dao).subirYBajar()
+        assertEquals(2, resultado.porReintentar) // La subida y la bajada.
+        assertEquals("PENDIENTE", dao.filas[6]!!.estadoSync)
+    }
+
+    @Test
+    fun bajar_conError500OSinInternetNoTocaRoom() = runTest {
+        val dao = FakeMuestraSyncDao(sincronizada(1))
+        val sync = sincronizador(dao)
+        api.fallar = { 500 }
+        assertEquals(1, sync.bajar().porReintentar)
+        api.sinInternet = true
+        assertTrue(sync.bajar().sinConexion)
+        assertEquals(setOf(1), dao.filas.keys)
     }
 }

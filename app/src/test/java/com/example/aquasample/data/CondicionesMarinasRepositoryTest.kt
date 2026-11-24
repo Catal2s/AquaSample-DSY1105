@@ -15,6 +15,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
+import com.google.gson.stream.MalformedJsonException
+import java.io.EOFException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
@@ -160,5 +162,11 @@ class CondicionesMarinasRepositoryTest {
         assertEquals("NE", puntoCardinal(45.0))
         assertEquals("SO", puntoCardinal(225.0))
         assertEquals("NO", puntoCardinal(315.0))
+    }
+
+    @Test
+    fun respuestaCortadaOMalFormadaEsErrorYNoSinConexion() = runTest {
+        assertTrue(mensaje(obtenerCon { throw MalformedJsonException("x") }).contains("no es válida"))
+        assertTrue(mensaje(obtenerCon { throw EOFException() }).contains("no es válida"))
     }
 }
