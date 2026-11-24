@@ -1,6 +1,6 @@
 # AquaSample
 
-Aplicación móvil para registrar y validar muestras de terreno en Aldemar SpA, con dos roles: **Operador de Muestreo** y **Supervisor Técnico** (MVP académico — DSY1105, La Brigada Fantasma).
+Aplicación móvil para registrar y validar muestras de terreno en Aldemar SpA, con tres roles: **Operador de Muestreo**, **Supervisor Técnico** y **Analista de Datos** (MVP académico — DSY1105, La Brigada Fantasma).
 
 ## Problema que aborda
 
@@ -27,7 +27,7 @@ La lista detallada de pendientes también está en [`TAREAS_P3.md`](TAREAS_P3.md
 
 ## Funcionalidades
 
-* **Login con roles** (Operador y Supervisor) con usuarios ficticios.
+* **Login con roles** (Operador, Supervisor y Analista) con usuarios ficticios.
 * **Registro de muestras** en tres pasos (datos, conteo y resumen), con validación de campos obligatorios y mensajes de error.
 * **Fecha y hora del teléfono:** el formulario parte con el momento actual y se puede cambiar con un calendario y un reloj; no se aceptan fechas ni horas futuras.
 * **Conteo manual** de individuos con botones +/− y calibre promedio opcional. La app no cuenta automáticamente.
@@ -117,6 +117,15 @@ Componentes Material 3 utilizados: `Scaffold`, `TopAppBar`, `NavigationBar`, `Ca
 |`operador1`|`1234`|Operador de muestreo|
 |`operador2`|`1234`|Operador de muestreo|
 |`supervisor1`|`1234`|Supervisor técnico|
+|`analista1`|`1234`|Analista de datos|
+
+**Qué puede hacer cada rol:**
+
+|Rol|Pantalla inicial|Puede|
+|-|-|-|
+|Operador|Inicio|Registrar muestras, ver sus propios envíos y marcar como corregida una muestra observada|
+|Supervisor|Bandeja de revisión|Ver todas las muestras, aprobarlas, solicitar corrección y eliminarlas|
+|Analista|Dashboard|Solo consulta: dashboard, historial con filtros y comparador, y exportar a CSV o PDF. No crea ni modifica muestras|
 
 La primera vez que se abre la app se cargan 5 muestras ficticias de ejemplo con distintos estados de revisión, para que Inicio e Historial muestren datos desde el primer ingreso.
 
