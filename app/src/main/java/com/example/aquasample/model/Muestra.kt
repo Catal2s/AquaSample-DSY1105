@@ -20,5 +20,9 @@ data class Muestra(
     val estado: EstadoRevision = EstadoRevision.PENDIENTE,
     val comentarioSupervisor: String? = null,
     /** Ruta de la foto de la muestra (cámara o galería). Se usa en la etapa de fotografías. */
-    val fotoUri: String? = null
+    val fotoUri: String? = null,
+    /** Si los cambios locales ya llegaron al backend. */
+    val estadoSync: EstadoSincronizacion = EstadoSincronizacion.PENDIENTE,
+    /** Motivo del error de sincronización, si lo hubo. */
+    val mensajeSync: String? = null
 )

@@ -6,10 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 /** Base de datos SQLite de la app (archivo "aquasample.db"). */
-@Database(entities = [MuestraEntity::class], version = 1, exportSchema = false)
+@Database(entities = [MuestraEntity::class, CambioEstadoEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun muestraDao(): MuestraDao
+
+    abstract fun muestraSyncDao(): MuestraSyncDao
 
     companion object {
         @Volatile
@@ -21,7 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
                     contexto.applicationContext,
                     AppDatabase::class.java,
                     "aquasample.db"
-                ).build().also { instancia = it }
+                ).addMigrations(MIGRACION_1_2).build().also { instancia = it }
             }
     }
 }
