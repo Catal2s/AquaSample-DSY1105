@@ -166,4 +166,14 @@ La base persiste al reiniciar el servidor. Si aparece vacía o con las 5 muestra
 
 ---
 
+## APK release firmada
+
+1. Crear el keystore una sola vez, fuera del repositorio (Build > Generate Signed App Bundle / APK > Create new).
+2. Crear `keystore.properties` en la raíz del proyecto (no se sube a Git) con `storeFile`, `storePassword`, `keyAlias` y `keyPassword`. La ruta va con barras normales.
+3. Compilar: `.\gradlew.bat assembleRelease`
+4. La APK queda en `app\build\outputs\apk\release\app-release.apk` (versión 1.1.0, código 2).
+5. Verificar la firma con `apksigner verify --verbose --print-certs`.
+
+El archivo `.jks` y `keystore.properties` están en `.gitignore` y nunca se suben al repositorio.
+
 [Contrato de la API](API_CONTRATO.md) · [Backend](../backend/README.md) · [índice](README.md)
