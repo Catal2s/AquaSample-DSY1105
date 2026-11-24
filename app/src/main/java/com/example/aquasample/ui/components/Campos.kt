@@ -33,7 +33,9 @@ fun CampoTexto(
     ejemplo: String? = null,
     teclado: KeyboardType = KeyboardType.Text,
     unaLinea: Boolean = true,
-    minLineas: Int = 1
+    minLineas: Int = 1,
+    /** Texto bajo el campo cuando no hay error, por ejemplo un contador de caracteres. */
+    ayuda: String? = null
 ) {
     OutlinedTextField(
         value = valor,
@@ -41,7 +43,7 @@ fun CampoTexto(
         label = { Text(etiqueta) },
         placeholder = ejemplo?.let { { Text(it) } },
         isError = error != null,
-        supportingText = error?.let { { Text(it) } },
+        supportingText = (error ?: ayuda)?.let { { Text(it) } },
         keyboardOptions = KeyboardOptions(keyboardType = teclado),
         singleLine = unaLinea,
         minLines = minLineas,

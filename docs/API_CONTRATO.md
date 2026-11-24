@@ -1,6 +1,6 @@
 # Contrato de la API · AquaSample
 
-Microservicio propio (Spring Boot) que recibe las muestras de la app. Este documento es la referencia para Retrofit (Cristobal), la sincronización con WorkManager (Javier), el dashboard (Daniel) y las pruebas (Vicente).
+Microservicio propio (Spring Boot) que recibe las muestras de la app. Este documento es la referencia para Retrofit (Cristobal), la sincronización con WorkManager (Javier, en desarrollo), el dashboard (Daniel) y las pruebas (Vicente).
 
 - URL base en el PC: `http://localhost:8080`
 - URL base desde el **emulador Android**: `http://10.0.2.2:8080`
@@ -36,6 +36,8 @@ Las operaciones de escritura llevan el header **`X-Rol`** con `OPERADOR`, `SUPER
 | Marcar corregida | Sí (si está OBSERVADO) | No | No |
 | Eliminar | No | Sí | No |
 
+`ANALISTA` existe solo en el backend: la app no tiene un usuario con ese rol.
+
 ## Endpoints
 
 | Método | Ruta | Qué hace | Respuesta |
@@ -48,8 +50,8 @@ Las operaciones de escritura llevan el header **`X-Rol`** con `OPERADOR`, `SUPER
 | DELETE | `/api/muestras/{id}` | Elimina una muestra y su foto | 204 / 400 / 403 / 404 |
 | POST | `/api/muestras/{id}/foto` | Sube la foto (multipart, campo `archivo`). Solo JPEG o PNG, hasta 10 MB. Reemplaza la anterior | 200 / 400 / 403 / 404 / 409 / 413 / 415 |
 | GET | `/api/muestras/{id}/foto` | Descarga la foto | 200 (imagen) / 400 / 404 |
-| GET | `/api/reportes/resumen` | Indicadores para el dashboard | 200 |
-| GET | `/api/reportes/validadas` | Muestras validadas, para exportar a Excel o PDF | 200 + lista |
+| GET | `/api/reportes/resumen` | Indicadores de las muestras. Disponible, pero la app hoy no lo usa | 200 |
+| GET | `/api/reportes/validadas` | Muestras validadas, para exportar a Excel o PDF. Disponible, pero la app hoy no lo usa | 200 + lista |
 
 ## JSON de entrada (POST y PUT)
 
@@ -135,12 +137,16 @@ La solución real sería que la app genere el id como UUID.
 
 ### Cómo se corrige una muestra observada
 
-Son **dos llamadas, en este orden**, ambas con `X-Rol: OPERADOR`:
+Con `X-Rol: OPERADOR`, en este orden:
 
-1. **PUT** `/api/muestras/{id}` con los datos corregidos. La muestra **sigue en `OBSERVADO`**.
+1. **PUT** `/api/muestras/{id}` con los datos corregidos. Es **opcional**: solo aplica si se editan datos. La muestra **sigue en `OBSERVADO`**.
 2. **PATCH** `/api/muestras/{id}/estado` con `{ "estado": "CORREGIDO" }`.
 
+**Hoy la app envía solo el PATCH**, sin PUT previo, porque no permite editar los datos. (Si los datos originales aún no llegaron al servidor, antes se envía el PUT de la muestra nueva.)
+
 ## Resumen (GET `/api/reportes/resumen`)
+
+El dashboard de la app no usa este endpoint: se calcula con los datos de Room.
 
 ```json
 {
@@ -177,11 +183,14 @@ Todos los errores de la API tienen el mismo formato:
 | 415 | `Content-Type` no soportado |
 | 500 | Error interno (sin detalles; quedan en el log del servidor) |
 
-## Notas para la sincronización (WorkManager)
+## Notas para la sincronización
 
-1. Enviar cada muestra pendiente con **PUT** `/api/muestras/{id}` y header `X-Rol: OPERADOR`.
-2. Si tiene foto, subirla después con POST `/api/muestras/{id}/foto`, antes de que sea validada.
-3. Si era una corrección, enviar después el PATCH a `CORREGIDO`. Los cambios de estado hechos sin internet se envían con PATCH usando el rol de quien los hizo.
+**Cuándo se envía hoy:** al guardar, revisar (aprobar, pedir corrección o marcar corregida) o eliminar una muestra, y con el botón **Sincronizar** del Historial. El reintento automático con **WorkManager está en desarrollo (Javier)**.
+
+1. Si la muestra tiene datos por enviar, se mandan con **PUT** `/api/muestras/{id}` y header `X-Rol: OPERADOR`.
+2. Si tiene una foto por enviar, se sube después con POST `/api/muestras/{id}/foto`, antes de que sea validada.
+3. Los cambios de estado se envían con PATCH, en orden y con el rol de quien los hizo. **Si solo cambió el estado, se envía solo el PATCH.**
 4. Con respuesta 2xx se marca la muestra como sincronizada en Room. Con 409 no se reintenta: repetir el mismo envío daría lo mismo. El campo `mensajes` indica la causa.
 5. Las muestras de ejemplo 1 a 5 ya existen en el servidor. Las 1 y 3 están validadas, así que su PUT responde 409.
-6. En la app, el Worker llama a `MuestraRepository.instancia.sincronizarPendientes()`: devuelve `true` si no queda nada que reintentar y `false` si hay que reintentar más tarde.
+6. Al eliminar una muestra que ya está en el servidor, queda oculta como **eliminación pendiente** y se envía el **DELETE** con el rol de quien la eliminó. Un **404 cuenta como éxito**, porque ya no existía. Si nunca llegó al servidor, se borra solo del teléfono.
+7. Cuando esté listo, el Worker debe llamar a `MuestraRepository.instancia.sincronizarPendientes()`: devuelve `true` si no queda nada que reintentar y `false` si hay que reintentar más tarde.

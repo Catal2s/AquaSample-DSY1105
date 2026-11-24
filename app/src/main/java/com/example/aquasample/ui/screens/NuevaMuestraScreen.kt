@@ -30,6 +30,7 @@ import com.example.aquasample.ui.components.DialogoHora
 import com.example.aquasample.ui.components.Selector
 import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.viewmodel.CampoMuestra
+import com.example.aquasample.viewmodel.MAX_OBSERVACIONES
 import com.example.aquasample.viewmodel.MuestraViewModel
 
 @Composable
@@ -125,9 +126,10 @@ fun NuevaMuestraScreen(muestraViewModel: MuestraViewModel, navController: NavCon
             valor = estado.observaciones,
             onCambio = muestraViewModel::onObservacionesChange,
             etiqueta = "Observaciones (opcional)",
-            error = null,
+            error = estado.errores[CampoMuestra.OBSERVACIONES],
             unaLinea = false,
-            minLineas = 3
+            minLineas = 3,
+            ayuda = "${estado.largoObservaciones}/$MAX_OBSERVACIONES"
         )
 
         Button(

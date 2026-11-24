@@ -1,12 +1,17 @@
 package com.example.aquasample.viewmodel
 
+import com.example.aquasample.data.DatosFicticios
 import com.example.aquasample.data.MuestraRepository
 import com.example.aquasample.data.local.MuestraDao
 import com.example.aquasample.data.local.MuestraEntity
+import com.example.aquasample.model.EstadoRevision
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -14,21 +19,27 @@ import java.util.Date
 
 private class FakeMuestraDao : MuestraDao {
     private val lista = MutableStateFlow<List<MuestraEntity>>(emptyList())
+    /** Cambios de estado recibidos: id, estado y comentario. */
+    val cambios = mutableListOf<Triple<Int, String, String?>>()
     override fun observarTodas(): Flow<List<MuestraEntity>> = lista
     override suspend fun buscarPorId(id: Int): MuestraEntity? = lista.value.find { it.id == id }
     override suspend fun contar(): Int = lista.value.size
     override suspend fun insertar(muestra: MuestraEntity) { lista.value = lista.value + muestra }
     override suspend fun insertarTodas(muestras: List<MuestraEntity>) { lista.value = lista.value + muestras }
-    override suspend fun actualizarEstado(id: Int, estado: String, comentario: String?) {}
+    override suspend fun actualizarEstado(id: Int, estado: String, comentario: String?) {
+        cambios += Triple(id, estado, comentario)
+    }
 }
 
 class MuestraViewModelTest {
 
     private lateinit var viewModel: MuestraViewModel
+    private val dao = FakeMuestraDao()
 
     @Before
     fun setUp() {
-        val repo = MuestraRepository(FakeMuestraDao())
+        // Unconfined: los cambios se guardan de inmediato, sin esperar otro hilo.
+        val repo = MuestraRepository(dao, alcance = CoroutineScope(Dispatchers.Unconfined))
         viewModel = MuestraViewModel(repositorio = repo, reloj = { Date(1730000000000L) })
     }
 
@@ -98,5 +109,114 @@ class MuestraViewModelTest {
         assertFalse(viewModel.uiState.value.modoMarcadoActivo)
         viewModel.alternarModoMarcado()
         assertTrue(viewModel.uiState.value.modoMarcadoActivo)
+    }
+
+    /** Deja válido el resto de Nueva muestra, para probar solo las observaciones. */
+    private fun completarDatos(observaciones: String) {
+        val centro = DatosFicticios.centros.first()
+        val tren = DatosFicticios.trenesDe(centro.id).first()
+        viewModel.seleccionarCentro(centro)
+        viewModel.seleccionarTren(tren)
+        viewModel.seleccionarLinea(DatosFicticios.lineasDe(tren.id).first())
+        viewModel.onTramoChange("0.2")
+        viewModel.onObservacionesChange(observaciones)
+    }
+
+    private fun errorObservaciones() = viewModel.uiState.value.errores[CampoMuestra.OBSERVACIONES]
+
+    @Test
+    fun observaciones_con499Caracteres_sonValidas() {
+        completarDatos("a".repeat(499))
+
+        assertTrue(viewModel.validarDatosMuestra())
+        assertNull(errorObservaciones())
+    }
+
+    @Test
+    fun observaciones_con500Caracteres_sonValidas() {
+        completarDatos("a".repeat(500))
+
+        assertTrue(viewModel.validarDatosMuestra())
+        assertNull(errorObservaciones())
+    }
+
+    @Test
+    fun observaciones_con501Caracteres_muestranErrorYNoAvanzan() {
+        completarDatos("a".repeat(501))
+
+        assertFalse(viewModel.validarDatosMuestra())
+        assertEquals(
+            mapOf(CampoMuestra.OBSERVACIONES to "Usa como máximo 500 caracteres"),
+            viewModel.uiState.value.errores
+        )
+    }
+
+    @Test
+    fun observaciones_losEspaciosDeLosExtremosNoCuentan() {
+        completarDatos("  " + "a".repeat(500) + "  ")
+
+        assertEquals(500, viewModel.uiState.value.largoObservaciones)
+        assertTrue(viewModel.validarDatosMuestra())
+    }
+
+    @Test
+    fun observaciones_alEditarSeBorraElError() {
+        completarDatos("a".repeat(501))
+        viewModel.validarDatosMuestra()
+
+        viewModel.onObservacionesChange("a".repeat(500))
+
+        assertNull(errorObservaciones())
+        assertTrue(viewModel.validarDatosMuestra())
+    }
+
+    private val observado = EstadoRevision.OBSERVADO.name
+
+    @Test
+    fun comentario_con499Caracteres_seEnvia() {
+        val texto = "a".repeat(499)
+
+        assertNull(errorDeComentario(texto, obligatorio = true))
+        viewModel.solicitarCorreccion(5, texto)
+
+        assertEquals(listOf(Triple(5, observado, texto)), dao.cambios)
+    }
+
+    @Test
+    fun comentario_con500Caracteres_seEnviaSinContarEspaciosDeLosExtremos() {
+        val texto = "a".repeat(500)
+
+        assertNull(errorDeComentario("  $texto  ", obligatorio = true))
+        viewModel.solicitarCorreccion(5, "  $texto  ")
+
+        assertEquals(listOf(Triple(5, observado, texto)), dao.cambios)
+    }
+
+    @Test
+    fun comentario_con501Caracteres_muestraErrorYNoSeEnvia() {
+        val texto = "a".repeat(501)
+
+        assertEquals("Usa como máximo 500 caracteres", errorDeComentario(texto, obligatorio = true))
+        viewModel.solicitarCorreccion(5, texto)
+
+        assertTrue(dao.cambios.isEmpty())
+    }
+
+    @Test
+    fun comentario_alAprobarEsOpcionalPeroTambienTieneLimite() {
+        assertNull(errorDeComentario("", obligatorio = false))
+        assertNull(errorDeComentario("a".repeat(500), obligatorio = false))
+        assertEquals("Usa como máximo 500 caracteres", errorDeComentario("a".repeat(501), obligatorio = false))
+    }
+
+    @Test
+    fun comentario_vacioNoPermiteSolicitarCorreccion() {
+        assertEquals(
+            "Escribe qué hay que corregir para solicitar la corrección",
+            errorDeComentario("   ", obligatorio = true)
+        )
+        viewModel.solicitarCorreccion(5, "   ")
+
+        assertTrue(dao.cambios.isEmpty())
     }
 }

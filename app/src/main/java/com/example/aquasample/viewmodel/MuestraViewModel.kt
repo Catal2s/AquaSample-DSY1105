@@ -21,7 +21,23 @@ import java.util.Locale
 import java.util.TimeZone
 
 /** Campos que se validan, para mostrar el error debajo del campo correcto. */
-enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, INDIVIDUOS, CALIBRE, FOTO }
+enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, OBSERVACIONES, INDIVIDUOS, CALIBRE, FOTO }
+
+/** Largo máximo de las observaciones. Debe coincidir con @Size(max = 500) de MuestraRequest en el backend. */
+const val MAX_OBSERVACIONES = 500
+
+/** Largo máximo del comentario del supervisor. Debe coincidir con @Size(max = 500) de CambioEstadoRequest en el backend. */
+const val MAX_COMENTARIO = 500
+
+/**
+ * Error del comentario del supervisor, o null si es válido. Solo es obligatorio al solicitar
+ * una corrección. El largo se cuenta sin espacios en los extremos, que es como se envía.
+ */
+fun errorDeComentario(comentario: String, obligatorio: Boolean): String? = when {
+    obligatorio && comentario.isBlank() -> "Escribe qué hay que corregir para solicitar la corrección"
+    comentario.trim().length > MAX_COMENTARIO -> "Usa como máximo $MAX_COMENTARIO caracteres"
+    else -> null
+}
 
 /** Marca táctil sobre la fotografía para el conteo asistido. Coordenadas normalizadas (0.0 a 1.0). */
 data class PuntoMarca(
@@ -56,6 +72,8 @@ data class MuestraUiState(
 ) {
     val tramoMetros: Double? get() = tramo.aNumero()
     val calibreMm: Double? get() = calibre.aNumero()
+    /** Se cuenta sin espacios al inicio ni al final, que es como se guarda y se envía. */
+    val largoObservaciones: Int get() = observaciones.trim().length
     val totalMarcas: Int get() = marcasPuntos.size
     val ajusteManual: Int get() = (individuos - marcasPuntos.size).coerceAtLeast(0)
 }
@@ -140,7 +158,7 @@ class MuestraViewModel(
     }
 
     fun onObservacionesChange(valor: String) {
-        _uiState.update { it.copy(observaciones = valor) }
+        _uiState.update { it.copy(observaciones = valor, errores = it.errores - CampoMuestra.OBSERVACIONES) }
     }
 
     /* Guarda la ruta de la foto elegida (o null si se quitó) y borra el error de foto.*/
@@ -171,6 +189,9 @@ class MuestraViewModel(
 
         val tramo = estado.tramoMetros
         if (tramo == null || tramo <= 0) errores[CampoMuestra.TRAMO] = "Ingresa un largo de tramo mayor a 0"
+        if (estado.largoObservaciones > MAX_OBSERVACIONES) {
+            errores[CampoMuestra.OBSERVACIONES] = "Usa como máximo $MAX_OBSERVACIONES caracteres"
+        }
 
         _uiState.update { it.copy(errores = it.errores - DATOS_MUESTRA + errores) }
         return errores.isEmpty()
@@ -302,7 +323,9 @@ class MuestraViewModel(
         repositorio.actualizarEstado(idMuestra, EstadoRevision.VALIDADO, rol = rol)
     }
 
+    /** No hace nada si el comentario no es válido: el servidor lo rechazaría. */
     fun solicitarCorreccion(idMuestra: Int, comentario: String, rol: Rol = Rol.SUPERVISOR) {
+        if (errorDeComentario(comentario, obligatorio = true) != null) return
         repositorio.actualizarEstado(idMuestra, EstadoRevision.OBSERVADO, comentario.trim(), rol)
     }
 
@@ -349,7 +372,7 @@ class MuestraViewModel(
     private companion object {
         val DATOS_MUESTRA = setOf(
             CampoMuestra.CENTRO, CampoMuestra.TREN, CampoMuestra.LINEA,
-            CampoMuestra.FECHA, CampoMuestra.HORA, CampoMuestra.TRAMO
+            CampoMuestra.FECHA, CampoMuestra.HORA, CampoMuestra.TRAMO, CampoMuestra.OBSERVACIONES
         )
         val DATOS_CONTEO = setOf(CampoMuestra.INDIVIDUOS, CampoMuestra.CALIBRE, CampoMuestra.FOTO)
     }

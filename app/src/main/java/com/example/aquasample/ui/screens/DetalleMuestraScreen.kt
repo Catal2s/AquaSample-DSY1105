@@ -33,7 +33,9 @@ import com.example.aquasample.ui.components.EtiquetaEstado
 import com.example.aquasample.ui.components.FilaDato
 import com.example.aquasample.ui.components.TarjetaCondicionesMarinas
 import com.example.aquasample.viewmodel.LoginViewModel
+import com.example.aquasample.viewmodel.MAX_COMENTARIO
 import com.example.aquasample.viewmodel.MuestraViewModel
+import com.example.aquasample.viewmodel.errorDeComentario
 import com.example.aquasample.ui.components.FotoMuestra
 
 /**
@@ -144,7 +146,7 @@ fun DetalleMuestraScreen(
 
 /**
  * Acciones del supervisor (wireframe 4): aprobar la muestra o pedir una corrección.
- * Para pedir una corrección el comentario es obligatorio, y se muestra un mensaje si está vacío.
+ * Para pedir una corrección el comentario es obligatorio. Si está vacío o es muy largo, se muestra un mensaje.
  */
 @Composable
 private fun PanelRevision(
@@ -152,7 +154,7 @@ private fun PanelRevision(
     onSolicitarCorreccion: (String) -> Unit
 ) {
     var comentario by rememberSaveable { mutableStateOf("") }
-    var mostrarError by rememberSaveable { mutableStateOf(false) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -162,25 +164,26 @@ private fun PanelRevision(
                 value = comentario,
                 onValueChange = {
                     comentario = it
-                    mostrarError = false
+                    error = null
                 },
                 label = { Text("Comentario para el operador") },
-                isError = mostrarError,
-                supportingText = {
-                    if (mostrarError) Text("Escribe qué hay que corregir para solicitar la corrección")
-                },
+                isError = error != null,
+                supportingText = { Text(error ?: "${comentario.trim().length}/$MAX_COMENTARIO") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Button(onClick = onAprobar, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = {
+                    error = errorDeComentario(comentario, obligatorio = false)
+                    if (error == null) onAprobar()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Aprobar muestra")
             }
             OutlinedButton(
                 onClick = {
-                    if (comentario.isBlank()) {
-                        mostrarError = true
-                    } else {
-                        onSolicitarCorreccion(comentario)
-                    }
+                    error = errorDeComentario(comentario, obligatorio = true)
+                    if (error == null) onSolicitarCorreccion(comentario)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
