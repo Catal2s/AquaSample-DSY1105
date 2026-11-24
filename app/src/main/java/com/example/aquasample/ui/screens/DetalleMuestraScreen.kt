@@ -89,8 +89,13 @@ fun DetalleMuestraScreen(
             FilaDato("Tramo", "${muestra.tramoMetros} m")
         }
 
-        SeccionDetalle("Conteo manual") {
+        SeccionDetalle("Conteo") {
             FilaDato("Individuos", muestra.conteo.individuos.toString())
+            if (muestra.conteo.asistidoPorFoto) {
+                FilaDato("Método", "Asistido por foto (${muestra.conteo.marcasRegistradas} marcas)")
+            } else {
+                FilaDato("Método", "Conteo manual")
+            }
             FilaDato("Calibre promedio", muestra.conteo.calibrePromedioMm?.let { "$it mm" } ?: "No registrado")
             FilaDato("Observaciones", muestra.observaciones.ifBlank { "Sin observaciones" })
         }
@@ -98,6 +103,7 @@ fun DetalleMuestraScreen(
         SeccionDetalle("Registro y revisión") {
             FilaDato("Operador", muestra.operador.nombre)
             FilaDato("Estado", muestra.estado.etiqueta)
+            FilaDato("Sincronización", "Pendiente de sincronización local")
             FilaDato("Comentario", muestra.comentarioSupervisor?.ifBlank { null } ?: "Sin comentarios del supervisor")
         }
 

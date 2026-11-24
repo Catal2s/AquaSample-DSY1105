@@ -22,6 +22,13 @@ import java.util.TimeZone
 /** Campos que se validan, para mostrar el error debajo del campo correcto. */
 enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, INDIVIDUOS, CALIBRE, FOTO }
 
+/** Marca táctil sobre la fotografía para el conteo asistido. Coordenadas normalizadas (0.0 a 1.0). */
+data class PuntoMarca(
+    val id: Int,
+    val xRel: Float,
+    val yRel: Float
+)
+
 /**
  * Estado compartido por las pantallas Nueva muestra → Conteo → Resumen.
  * Los campos numéricos se guardan como texto tal cual los escribe el usuario
@@ -41,11 +48,15 @@ data class MuestraUiState(
     val calibre: String = "",
     val observaciones: String = "",
     val fotoUri: String? = null,
+    val marcasPuntos: List<PuntoMarca> = emptyList(),
+    val modoMarcadoActivo: Boolean = true,
     val errores: Map<CampoMuestra, String> = emptyMap(),
     val muestraEnviada: Muestra? = null
 ) {
     val tramoMetros: Double? get() = tramo.aNumero()
     val calibreMm: Double? get() = calibre.aNumero()
+    val totalMarcas: Int get() = marcasPuntos.size
+    val ajusteManual: Int get() = (individuos - marcasPuntos.size).coerceAtLeast(0)
 }
 
 private fun String.aNumero(): Double? = trim().replace(',', '.').toDoubleOrNull()
@@ -164,7 +175,43 @@ class MuestraViewModel(
         return errores.isEmpty()
     }
 
-    // ---------- Pantalla: Conteo ----------
+    // ---------- Pantalla: Conteo Asistido y Manual ----------
+
+    /** Agrega una marca táctil sobre la fotografía e incrementa el total de individuos. */
+    fun agregarMarca(xRel: Float, yRel: Float) {
+        _uiState.update { estado ->
+            val nuevoId = (estado.marcasPuntos.maxOfOrNull { it.id } ?: 0) + 1
+            val punto = PuntoMarca(nuevoId, xRel.coerceIn(0f, 1f), yRel.coerceIn(0f, 1f))
+            val nuevas = estado.marcasPuntos + punto
+            estado.copy(
+                marcasPuntos = nuevas,
+                individuos = nuevas.size,
+                errores = estado.errores - CampoMuestra.INDIVIDUOS
+            )
+        }
+    }
+
+    /** Deshace la última marca realizada en la foto y sincroniza el contador. */
+    fun deshacerUltimaMarca() {
+        _uiState.update { estado ->
+            if (estado.marcasPuntos.isEmpty()) return@update estado
+            val nuevas = estado.marcasPuntos.dropLast(1)
+            estado.copy(
+                marcasPuntos = nuevas,
+                individuos = nuevas.size
+            )
+        }
+    }
+
+    /** Limpia todas las marcas registradas en la fotografía. */
+    fun limpiarMarcas() {
+        _uiState.update { it.copy(marcasPuntos = emptyList(), individuos = 0) }
+    }
+
+    /** Activa o desactiva el modo de marcado táctil sobre la fotografía. */
+    fun alternarModoMarcado() {
+        _uiState.update { it.copy(modoMarcadoActivo = !it.modoMarcadoActivo) }
+    }
 
     fun sumarIndividuo() {
         _uiState.update {
@@ -176,7 +223,7 @@ class MuestraViewModel(
         _uiState.update { it.copy(individuos = (it.individuos - 1).coerceAtLeast(0)) }
     }
 
-    /** Para cuando el operador escribe el número directo en vez de usar +/-. */
+    /** Para cuando el operador escribe el número directo en vez de usar +/- o después de marcar. */
     fun onIndividuosChange(valor: String) {
         val limpio = valor.filter { it.isDigit() }
         val numero = if (limpio.isEmpty()) 0 else limpio.take(6).toInt()
@@ -228,7 +275,13 @@ class MuestraViewModel(
             hora = estado.hora.trim(),
             tramoMetros = estado.tramoMetros!!,
             operador = operador,
-            conteo = Conteo(individuos = estado.individuos, calibrePromedioMm = estado.calibreMm),
+            conteo = Conteo(
+                individuos = estado.individuos,
+                calibrePromedioMm = estado.calibreMm,
+                asistidoPorFoto = estado.marcasPuntos.isNotEmpty(),
+                marcasRegistradas = estado.marcasPuntos.size,
+                ajusteManual = (estado.individuos - estado.marcasPuntos.size).coerceAtLeast(0)
+            ),
             observaciones = estado.observaciones.trim(),
             fotoUri = estado.fotoUri
         )

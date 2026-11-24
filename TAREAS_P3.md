@@ -50,13 +50,13 @@ Asignación: semana 13 · **Entrega: semana 15** (antes de la primera sesión de
 
 ### Daniel Vargas · Frontend/UI: conteo y visualización
 
-- [ ] Conteo asistido: marcar individuos tocando la foto (Compose)
-- [ ] Deshacer marcas y ajustar el total manualmente; guardar junto con la corrección
-- [ ] Dashboard con gráficos: muestras por centro, estados pendiente/validado, evolución en el tiempo
-- [ ] Historial: comparar muestreos de una misma línea / entre períodos
-- [ ] Estados de vacío, carga, error y sin internet
-- [ ] Aviso visual "Pendiente de sincronización"
-- [ ] Animaciones discretas, iconos por sección, botones con buen contraste
+- [x] Conteo asistido: marcar individuos tocando la foto (Compose)
+- [x] Deshacer marcas y ajustar el total manualmente; guardar junto con la corrección
+- [x] Dashboard con gráficos: muestras por centro, estados pendiente/validado, evolución en el tiempo
+- [x] Historial: comparar muestreos de una misma línea / entre períodos
+- [x] Estados de vacío, carga, error y sin internet
+- [x] Aviso visual "Pendiente de sincronización"
+- [x] Animaciones discretas, iconos por sección, botones con buen contraste
 
 ### Vicente Barrera · QA: calidad, exportación y documentación
 
