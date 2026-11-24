@@ -4,8 +4,24 @@ Microservicio propio (Spring Boot) que recibe las muestras de la app. Este docum
 
 - URL base en el PC: `http://localhost:8080`
 - URL base desde el **emulador Android**: `http://10.0.2.2:8080`
+- URL base desde un **teléfono físico**: `http://IP_DEL_PC:8080` (ver abajo)
 - Documentación interactiva: `http://localhost:8080/swagger-ui.html`
 - Formato: JSON. Fechas `yyyy-MM-dd`, horas `HH:mm` (igual que en la app). Las fechas con hora de salida son `yyyy-MM-ddTHH:mm:ss`, sin fracciones.
+
+## Conectar la app desde un teléfono físico
+
+El teléfono y el PC deben estar en la misma red WiFi.
+
+1. En el PC, ejecutar `ipconfig` y copiar la **Dirección IPv4** del adaptador WiFi (por ejemplo `192.168.1.50`).
+2. En `local.properties`, en la raíz del proyecto (no se sube a GitHub), agregar:
+   ```properties
+   backend.url=http://192.168.1.50:8080/
+   ```
+   Sin esa línea se usa `http://10.0.2.2:8080/`, la del emulador.
+3. Volver a **compilar e instalar** la app. La IP queda dentro del APK (debug o release): si cambia la red, hay que repetir los pasos. Al compilar se genera `network_security_config.xml`, que permite HTTP solo hacia esa IP.
+4. Levantar el backend y, si Windows lo pregunta, permitir Java en el Firewall para la red en uso.
+5. Comprobar en el navegador del teléfono: `http://192.168.1.50:8080/api/muestras`. Si no abre, es la red o el Firewall (algunas redes WiFi no dejan que los equipos se vean entre sí; se puede usar la zona WiFi de un teléfono).
+6. Desde Android 17 la app pide permiso para conectarse a dispositivos cercanos (red local): hay que **permitirlo**, o no llegará al backend.
 
 ## Roles
 
@@ -168,3 +184,4 @@ Todos los errores de la API tienen el mismo formato:
 3. Si era una corrección, enviar después el PATCH a `CORREGIDO`. Los cambios de estado hechos sin internet se envían con PATCH usando el rol de quien los hizo.
 4. Con respuesta 2xx se marca la muestra como sincronizada en Room. Con 409 no se reintenta: repetir el mismo envío daría lo mismo. El campo `mensajes` indica la causa.
 5. Las muestras de ejemplo 1 a 5 ya existen en el servidor. Las 1 y 3 están validadas, así que su PUT responde 409.
+6. En la app, el Worker llama a `MuestraRepository.instancia.sincronizarPendientes()`: devuelve `true` si no queda nada que reintentar y `false` si hay que reintentar más tarde.

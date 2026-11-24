@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.aquasample.model.EstadoRevision
+import com.example.aquasample.model.EstadoSincronizacion
 import com.example.aquasample.model.Muestra
 
 import androidx.compose.foundation.layout.Spacer
@@ -87,6 +88,11 @@ fun TarjetaMuestra(
                 }
 
                 if (mostrarAvisoSincronizacion) {
+                    val colorSync = when (muestra.estadoSync) {
+                        EstadoSincronizacion.SINCRONIZADA -> MaterialTheme.colorScheme.onSurfaceVariant
+                        EstadoSincronizacion.PENDIENTE -> MaterialTheme.colorScheme.tertiary
+                        EstadoSincronizacion.ERROR -> MaterialTheme.colorScheme.error
+                    }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -94,14 +100,14 @@ fun TarjetaMuestra(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_sync),
-                            contentDescription = "Pendiente de sincronización",
-                            tint = MaterialTheme.colorScheme.tertiary,
+                            contentDescription = null,
+                            tint = colorSync,
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
-                            text = "Pendiente de sincronización",
+                            text = muestra.estadoSync.etiqueta,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.tertiary
+                            color = colorSync
                         )
                     }
                 }
