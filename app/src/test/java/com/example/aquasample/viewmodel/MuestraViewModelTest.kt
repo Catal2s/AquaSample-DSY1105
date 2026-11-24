@@ -1,5 +1,6 @@
 package com.example.aquasample.viewmodel
 
+import com.example.aquasample.data.DatosFicticios
 import com.example.aquasample.data.MuestraRepository
 import com.example.aquasample.data.local.MuestraDao
 import com.example.aquasample.data.local.MuestraEntity
@@ -7,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -98,5 +100,64 @@ class MuestraViewModelTest {
         assertFalse(viewModel.uiState.value.modoMarcadoActivo)
         viewModel.alternarModoMarcado()
         assertTrue(viewModel.uiState.value.modoMarcadoActivo)
+    }
+
+    /** Deja válido el resto de Nueva muestra, para probar solo las observaciones. */
+    private fun completarDatos(observaciones: String) {
+        val centro = DatosFicticios.centros.first()
+        val tren = DatosFicticios.trenesDe(centro.id).first()
+        viewModel.seleccionarCentro(centro)
+        viewModel.seleccionarTren(tren)
+        viewModel.seleccionarLinea(DatosFicticios.lineasDe(tren.id).first())
+        viewModel.onTramoChange("0.2")
+        viewModel.onObservacionesChange(observaciones)
+    }
+
+    private fun errorObservaciones() = viewModel.uiState.value.errores[CampoMuestra.OBSERVACIONES]
+
+    @Test
+    fun observaciones_con499Caracteres_sonValidas() {
+        completarDatos("a".repeat(499))
+
+        assertTrue(viewModel.validarDatosMuestra())
+        assertNull(errorObservaciones())
+    }
+
+    @Test
+    fun observaciones_con500Caracteres_sonValidas() {
+        completarDatos("a".repeat(500))
+
+        assertTrue(viewModel.validarDatosMuestra())
+        assertNull(errorObservaciones())
+    }
+
+    @Test
+    fun observaciones_con501Caracteres_muestranErrorYNoAvanzan() {
+        completarDatos("a".repeat(501))
+
+        assertFalse(viewModel.validarDatosMuestra())
+        assertEquals(
+            mapOf(CampoMuestra.OBSERVACIONES to "Usa como máximo 500 caracteres"),
+            viewModel.uiState.value.errores
+        )
+    }
+
+    @Test
+    fun observaciones_losEspaciosDeLosExtremosNoCuentan() {
+        completarDatos("  " + "a".repeat(500) + "  ")
+
+        assertEquals(500, viewModel.uiState.value.largoObservaciones)
+        assertTrue(viewModel.validarDatosMuestra())
+    }
+
+    @Test
+    fun observaciones_alEditarSeBorraElError() {
+        completarDatos("a".repeat(501))
+        viewModel.validarDatosMuestra()
+
+        viewModel.onObservacionesChange("a".repeat(500))
+
+        assertNull(errorObservaciones())
+        assertTrue(viewModel.validarDatosMuestra())
     }
 }
