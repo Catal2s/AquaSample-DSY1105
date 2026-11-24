@@ -19,12 +19,13 @@ import com.example.aquasample.model.EstadoRevision
 import com.example.aquasample.model.Muestra
 
 /**
- * Tarjeta con el resumen de una muestra. Se usa en Inicio y en Historial
- * (antes estaba como función privada dentro de InicioScreen).
+ * Tarjeta con el resumen de una muestra. Se usa en Inicio, Historial y la bandeja
+ * del supervisor (antes estaba como función privada dentro de InicioScreen).
+ * Al tocarla se abre el detalle de la muestra.
  */
 @Composable
-fun TarjetaMuestra(muestra: Muestra, mostrarOperador: Boolean) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun TarjetaMuestra(muestra: Muestra, mostrarOperador: Boolean, onClick: () -> Unit) {
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)

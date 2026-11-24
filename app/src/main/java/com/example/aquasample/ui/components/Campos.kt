@@ -49,6 +49,40 @@ fun CampoTexto(
     )
 }
 
+/**
+ * Campo de solo lectura que, al tocarlo, avisa con onClick (para abrir el
+ * calendario o el reloj). Muestra el error igual que CampoTexto.
+ */
+@Composable
+fun CampoSeleccion(
+    valor: String,
+    etiqueta: String,
+    icono: Int,
+    onClick: () -> Unit,
+    error: String?,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = valor,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(etiqueta) },
+            trailingIcon = { Icon(painterResource(icono), contentDescription = null) },
+            isError = error != null,
+            supportingText = error?.let { { Text(it) } },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        // Igual que en Selector: una capa encima para que todo el campo responda al toque.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable(onClick = onClick)
+        )
+    }
+}
+
 /** Campo de solo lectura que abre un menú para elegir una opción (centro, tren o línea). */
 @Composable
 fun <T> Selector(

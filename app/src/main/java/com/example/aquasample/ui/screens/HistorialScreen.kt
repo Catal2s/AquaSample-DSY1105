@@ -1,5 +1,8 @@
 package com.example.aquasample.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -20,25 +25,52 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.aquasample.data.DatosFicticios
+import com.example.aquasample.data.exportarMuestrasCsv
 import com.example.aquasample.model.EstadoRevision
 import com.example.aquasample.model.Rol
+import com.example.aquasample.ui.components.CampoTexto
+import com.example.aquasample.ui.components.EstadoVacio
 import com.example.aquasample.ui.components.TarjetaMuestra
+import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.viewmodel.HistorialViewModel
 import com.example.aquasample.viewmodel.LoginViewModel
 
 @Composable
-fun HistorialScreen(loginViewModel: LoginViewModel, historialViewModel: HistorialViewModel) {
+fun HistorialScreen(
+    loginViewModel: LoginViewModel,
+    historialViewModel: HistorialViewModel,
+    navController: NavController
+) {
     val loginEstado by loginViewModel.uiState.collectAsState()
     val estado by historialViewModel.uiState.collectAsState()
+    val filtros by historialViewModel.filtros.collectAsState()
     val usuario = loginEstado.usuarioActual ?: return
     val esOperador = usuario.rol == Rol.OPERADOR
 
     // El operador solo consulta sus muestras; el supervisor consulta todas.
     LaunchedEffect(usuario.id) {
         historialViewModel.limitarAOperador(if (esOperador) usuario.id else null)
+    }
+
+    // Recurso del dispositivo: selector de documentos de Android para elegir dónde guardar el CSV.
+    val contexto = LocalContext.current
+    val selectorDeArchivo = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { destino ->
+        if (destino != null) {
+            val exportadas = exportarMuestrasCsv(contexto, destino, estado.muestras)
+            val mensaje = if (exportadas >= 0) {
+                "Se exportaron $exportadas muestras"
+            } else {
+                "No se pudo guardar el archivo"
+            }
+            Toast.makeText(contexto, mensaje, Toast.LENGTH_LONG).show()
+        }
     }
 
     LazyColumn(
@@ -53,10 +85,50 @@ fun HistorialScreen(loginViewModel: LoginViewModel, historialViewModel: Historia
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Filtra por centro, línea o estado de revisión",
+                text = "Busca o filtra por fecha, centro, línea o estado de revisión",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+
+        item {
+            OutlinedTextField(
+                value = filtros.texto,
+                onValueChange = historialViewModel::buscar,
+                label = { Text("Buscar muestra") },
+                placeholder = { Text("Ej: #3, línea 2, Sur, fouling") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        // Rango de fechas: se puede llenar solo una (desde o hasta) o ambas.
+        item {
+            Column {
+                Text(
+                    text = "Fecha",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CampoTexto(
+                        valor = filtros.fechaDesde,
+                        onCambio = historialViewModel::onFechaDesdeChange,
+                        etiqueta = "Desde",
+                        error = estado.errorFechaDesde,
+                        ejemplo = "AAAA-MM-DD",
+                        modifier = Modifier.weight(1f)
+                    )
+                    CampoTexto(
+                        valor = filtros.fechaHasta,
+                        onCambio = historialViewModel::onFechaHastaChange,
+                        etiqueta = "Hasta",
+                        error = estado.errorFechaHasta,
+                        ejemplo = "AAAA-MM-DD",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
 
         item {
@@ -123,17 +195,41 @@ fun HistorialScreen(loginViewModel: LoginViewModel, historialViewModel: Historia
             }
         }
 
+        // Exporta lo que se ve en pantalla: si hay filtros, solo las muestras filtradas.
+        item {
+            OutlinedButton(
+                onClick = { selectorDeArchivo.launch("muestras_aquasample.csv") },
+                enabled = estado.muestras.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Exportar a CSV")
+            }
+        }
+
         if (estado.muestras.isEmpty()) {
             item {
-                Text(
-                    text = "No hay muestras que coincidan con los filtros.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (estado.hayFiltros) {
+                    EstadoVacio(
+                        titulo = "Sin resultados",
+                        mensaje = "Ninguna muestra coincide con la búsqueda o los filtros elegidos.",
+                        textoAccion = "Limpiar filtros",
+                        onAccion = historialViewModel::limpiarFiltros
+                    )
+                } else {
+                    EstadoVacio(
+                        titulo = "Todavía no hay muestras",
+                        mensaje = if (esOperador) "Las muestras que envíes aparecerán aquí." else "Aún no se han registrado muestras."
+                    )
+                }
             }
         }
 
         items(estado.muestras, key = { it.id }) { muestra ->
-            TarjetaMuestra(muestra, mostrarOperador = !esOperador)
+            TarjetaMuestra(
+                muestra = muestra,
+                mostrarOperador = !esOperador,
+                onClick = { navController.navigate(Rutas.detalle(muestra.id)) }
+            )
         }
     }
 }

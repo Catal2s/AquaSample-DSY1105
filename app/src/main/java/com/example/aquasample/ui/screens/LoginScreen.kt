@@ -35,8 +35,10 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavController) {
 
     val ingresar = {
         if (loginViewModel.iniciarSesion()) {
-            // Se saca Login de la pila para que "atrás" desde Inicio no vuelva al login.
-            navController.navigate(Rutas.INICIO) {
+            // El operador parte en Inicio y el supervisor en su bandeja de revisión.
+            // Se saca Login de la pila para que "atrás" no vuelva al login.
+            val rol = loginViewModel.uiState.value.usuarioActual?.rol
+            navController.navigate(Rutas.inicioDe(rol)) {
                 popUpTo(Rutas.LOGIN) { inclusive = true }
             }
         }

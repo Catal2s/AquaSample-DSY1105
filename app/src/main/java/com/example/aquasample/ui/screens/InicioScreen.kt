@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aquasample.model.Rol
 import com.example.aquasample.ui.components.TarjetaMuestra
+import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.ui.navigation.abrirNuevaMuestra
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
@@ -90,7 +91,11 @@ fun InicioScreen(
         }
 
         items(muestras, key = { it.id }) { muestra ->
-            TarjetaMuestra(muestra, mostrarOperador = !esOperador)
+            TarjetaMuestra(
+                muestra = muestra,
+                mostrarOperador = !esOperador,
+                onClick = { navController.navigate(Rutas.detalle(muestra.id)) }
+            )
         }
     }
 }
