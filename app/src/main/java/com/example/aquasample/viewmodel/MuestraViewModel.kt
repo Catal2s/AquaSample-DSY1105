@@ -18,10 +18,9 @@ import kotlinx.coroutines.flow.update
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.TimeZone
 
 /** Campos que se validan, para mostrar el error debajo del campo correcto. */
-enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, INDIVIDUOS, CALIBRE, FOTO }
+enum class CampoMuestra { CENTRO, TREN, LINEA, TRAMO, INDIVIDUOS, CALIBRE, FOTO }
 
 /** Marca táctil sobre la fotografía para el conteo asistido. Coordenadas normalizadas (0.0 a 1.0). */
 data class PuntoMarca(
@@ -103,36 +102,13 @@ class MuestraViewModel(
         _uiState.update { it.copy(linea = linea, errores = it.errores - CampoMuestra.LINEA) }
     }
 
-    fun onFechaChange(valor: String) {
-        _uiState.update { it.copy(fecha = valor, errores = it.errores - CampoMuestra.FECHA) }
-    }
-
-    fun onHoraChange(valor: String) {
-        _uiState.update { it.copy(hora = valor, errores = it.errores - CampoMuestra.HORA) }
-    }
-
-    /** Recibe el día elegido en el calendario (DatePicker), que viene en milisegundos UTC. */
-    fun onFechaElegida(millisUtc: Long) {
-        onFechaChange(formatoFecha(utc = true).format(Date(millisUtc)))
-    }
-
-    /** Recibe la hora elegida en el reloj (TimePicker). */
-    fun onHoraElegida(hora: Int, minuto: Int) {
-        onHoraChange(String.format(Locale.US, "%02d:%02d", hora, minuto))
-    }
-
-    /** Fecha del formulario en milisegundos UTC, para que el calendario parta en ese día. */
-    fun fechaEnMillis(): Long? = fechaAMillisUtc(_uiState.value.fecha)
-
-    /** Hoy en milisegundos UTC: el calendario no deja elegir días posteriores. */
-    fun hoyEnMillis(): Long = fechaAMillisUtc(hoy()) ?: Long.MAX_VALUE
-
-    /** Hora y minuto del formulario, para que el reloj parta en esa hora. */
-    fun horaYMinuto(): Pair<Int, Int> {
-        val hora = _uiState.value.hora.trim()
-        if (!horaValida(hora)) return 0 to 0
-        val partes = hora.split(":")
-        return partes[0].toInt() to partes[1].toInt()
+    /**
+     * La fecha y la hora no se escriben: se marcan solas con el reloj del teléfono.
+     * Se llama al abrir Nueva muestra y otra vez al enviar, así la muestra queda
+     * con el momento exacto en que se registró y el operador no puede equivocarse.
+     */
+    fun marcarFechaHoraActual() {
+        _uiState.update { it.copy(fecha = hoy(), hora = horaActual()) }
     }
 
     fun onTramoChange(valor: String) {
@@ -159,15 +135,7 @@ class MuestraViewModel(
         if (estado.centro == null) errores[CampoMuestra.CENTRO] = "Selecciona un centro"
         if (estado.tren == null) errores[CampoMuestra.TREN] = "Selecciona un tren"
         if (estado.linea == null) errores[CampoMuestra.LINEA] = "Selecciona una línea"
-        // La muestra se registra en terreno, así que no puede tener fecha ni hora futuras.
-        // Como el formato es AAAA-MM-DD y HH:MM, se pueden comparar como texto.
-        val hoy = hoy()
-        val fecha = estado.fecha.trim()
-        val hora = estado.hora.trim()
-        if (!fechaValida(fecha)) errores[CampoMuestra.FECHA] = "Usa el formato AAAA-MM-DD"
-        else if (fecha > hoy) errores[CampoMuestra.FECHA] = "La fecha no puede ser posterior a hoy"
-        if (!horaValida(hora)) errores[CampoMuestra.HORA] = "Usa el formato HH:MM"
-        else if (fecha == hoy && hora > horaActual()) errores[CampoMuestra.HORA] = "La hora no puede ser posterior a la actual"
+        // La fecha y la hora no se validan: las pone el reloj del teléfono (marcarFechaHoraActual).
 
         val tramo = estado.tramoMetros
         if (tramo == null || tramo <= 0) errores[CampoMuestra.TRAMO] = "Ingresa un largo de tramo mayor a 0"
@@ -266,6 +234,8 @@ class MuestraViewModel(
         val conteoOk = validarConteo()
         if (!datosOk || !conteoOk) return false
 
+        // Se registra el momento exacto del envío.
+        marcarFechaHoraActual()
         val estado = _uiState.value
         val muestra = Muestra(
             id = repositorio.siguienteId(),
@@ -322,35 +292,14 @@ class MuestraViewModel(
     /** La fecha y la hora parten con el momento actual del teléfono. */
     private fun estadoInicial(): MuestraUiState = MuestraUiState(fecha = hoy(), hora = horaActual())
 
-    private fun hoy(): String = formatoFecha().format(reloj())
+    /** Fecha del teléfono en formato AAAA-MM-DD (el mismo que usa el backend). */
+    private fun hoy(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(reloj())
 
+    /** Hora del teléfono en formato HH:mm (24 horas). */
     private fun horaActual(): String = SimpleDateFormat("HH:mm", Locale.US).format(reloj())
 
-    /** El DatePicker trabaja en UTC; el resto de la app en la zona horaria del teléfono. */
-    private fun formatoFecha(utc: Boolean = false) = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-        isLenient = false
-        if (utc) timeZone = TimeZone.getTimeZone("UTC")
-    }
-
-    private fun fechaAMillisUtc(fecha: String): Long? =
-        if (fechaValida(fecha)) runCatching { formatoFecha(utc = true).parse(fecha.trim())?.time }.getOrNull()
-        else null
-
-    private fun fechaValida(fecha: String): Boolean =
-        Regex("""\d{4}-\d{2}-\d{2}""").matches(fecha.trim()) &&
-            runCatching { formatoFecha().parse(fecha.trim()) }.getOrNull() != null
-
-    private fun horaValida(hora: String): Boolean {
-        val partes = hora.trim().split(":")
-        if (partes.size != 2 || partes.any { it.length != 2 || !it.all(Char::isDigit) }) return false
-        return partes[0].toInt() in 0..23 && partes[1].toInt() in 0..59
-    }
-
     private companion object {
-        val DATOS_MUESTRA = setOf(
-            CampoMuestra.CENTRO, CampoMuestra.TREN, CampoMuestra.LINEA,
-            CampoMuestra.FECHA, CampoMuestra.HORA, CampoMuestra.TRAMO
-        )
+        val DATOS_MUESTRA = setOf(CampoMuestra.CENTRO, CampoMuestra.TREN, CampoMuestra.LINEA, CampoMuestra.TRAMO)
         val DATOS_CONTEO = setOf(CampoMuestra.INDIVIDUOS, CampoMuestra.CALIBRE, CampoMuestra.FOTO)
     }
 }
