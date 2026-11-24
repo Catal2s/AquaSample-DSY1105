@@ -6,9 +6,9 @@ Aplicación móvil para registrar y validar muestras de terreno en Aldemar SpA, 
 
 En el muestreo de líneas de cultivo de choritos, el conteo y el registro se hacen de forma manual. Con alta densidad de individuos el proceso es lento y aparecen diferencias de conteo y registros incompletos. Además, los datos, las fotografías y las notas quedan repartidos en archivos distintos, lo que dificulta revisar, corregir y comparar el historial de una misma línea.
 
-AquaSample permite registrar cada muestra con sus datos de trazabilidad (centro, tren, línea, fecha, hora y tramo), su conteo y sus observaciones, revisarla como supervisor y consultar el historial con su estado de revisión.
+AquaSample permite registrar cada muestra con sus datos de trazabilidad (centro, tren, línea, fecha, hora y tramo), su conteo, una fotografía y sus observaciones, revisarla como supervisor y consultar el historial con su estado de revisión.
 
-> MVP académico: todos los usuarios, centros y muestras son \*\*ficticios\*\*. No se usa información real de ALDEMAR.
+> MVP académico: todos los usuarios, centros, muestras y fotos son **ficticios**. No se usa información real de ALDEMAR.
 
 ## Integrantes
 
@@ -23,15 +23,17 @@ AquaSample permite registrar cada muestra con sus datos de trazabilidad (centro,
 
 Las tareas, responsables y avances del equipo se gestionan en Trello: **https://trello.com/b/3lAtfC5W/trello-aquasample**
 
-La lista detallada de pendientes también está en [`TAREAS.md`](TAREAS.md).
+La lista detallada de pendientes también está en [`TAREAS_P3.md`](TAREAS_P3.md).
 
 ## Funcionalidades
 
 * **Login con roles** (Operador y Supervisor) con usuarios ficticios.
 * **Registro de muestras** en tres pasos (datos, conteo y resumen), con validación de campos obligatorios y mensajes de error.
+* **Fecha y hora del teléfono:** el formulario parte con el momento actual y se puede cambiar con un calendario y un reloj; no se aceptan fechas ni horas futuras.
 * **Conteo manual** de individuos con botones +/− y calibre promedio opcional. La app no cuenta automáticamente.
+* **Foto de la muestra** tomada con la cámara o elegida desde la galería; es obligatoria para enviar la muestra.
 * **Historial** con búsqueda de texto y filtros por fecha, centro, línea y estado de revisión.
-* **Detalle de muestra** con todos sus datos y el comentario del supervisor.
+* **Detalle de muestra** con todos sus datos, la foto y el comentario del supervisor.
 * **Revisión del supervisor:** bandeja de muestras por revisar, con acciones para aprobar o solicitar corrección.
 * **Corrección del operador:** el operador puede marcar como corregida una muestra observada.
 * **Persistencia local con Room (SQLite):** las muestras se conservan al cerrar la app.
@@ -39,7 +41,7 @@ La lista detallada de pendientes también está en [`TAREAS.md`](TAREAS.md).
 
 ## Identidad visual
 
-!\[Logo de AquaSample](docs/diseno/logo.png)
+![Logo de AquaSample](docs/diseno/logo.png)
 
 |Color|HEX|Uso|
 |-|-|-|
@@ -57,7 +59,7 @@ La paleta está aplicada en el tema de la app (`ui/theme/Color.kt` y `ui/theme/T
 app/src/main/java/com/example/aquasample/
 ├── MainActivity.kt          → inicializa la base de datos, aplica el tema y carga AquaSampleApp
 ├── model/                   → entidades de datos
-├── data/                    → datos ficticios, repositorio y exportación a CSV
+├── data/                    → datos ficticios, repositorio, fotos y exportación a CSV
 │   └── local/               → Room: entidad, DAO y base de datos
 ├── viewmodel/               → ViewModels y estado de las pantallas (StateFlow)
 └── ui/
@@ -81,7 +83,7 @@ app/src/main/java/com/example/aquasample/
 |`Centro`|Centro de cultivo|
 |`Tren`|Tren de cultivo, pertenece a un centro|
 |`Linea`|Línea de cultivo, pertenece a un tren|
-|`Muestra`|Centro, tren, línea, fecha, hora, tramo, operador, conteo, observaciones, estado, comentario del supervisor y `fotoUri` (reservado para la etapa de fotografías)|
+|`Muestra`|Centro, tren, línea, fecha, hora, tramo, operador, conteo, observaciones, estado, comentario del supervisor y `fotoUri` (ruta de la foto de la muestra)|
 |`Conteo`|Cantidad de individuos y calibre promedio (opcional)|
 |`EstadoRevision`|`PENDIENTE`, `OBSERVADO`, `CORREGIDO` o `VALIDADO`|
 
@@ -90,7 +92,7 @@ app/src/main/java/com/example/aquasample/
 |ViewModel|Pantallas|Responsabilidad|
 |-|-|-|
 |`LoginViewModel`|Login|Valida usuario y clave ficticios y guarda el usuario de la sesión|
-|`MuestraViewModel`|Nueva muestra, Conteo, Resumen, Inicio, Detalle, Bandeja|Formulario compartido de la muestra, validaciones, envío a revisión y acciones de revisión (aprobar, solicitar corrección, marcar corregida)|
+|`MuestraViewModel`|Nueva muestra, Conteo, Resumen, Inicio, Detalle, Bandeja|Formulario compartido de la muestra, validaciones (incluidas fecha y hora no futuras y foto obligatoria), envío a revisión y acciones de revisión (aprobar, solicitar corrección, marcar corregida)|
 |`HistorialViewModel`|Historial|Búsqueda de texto y filtros por fecha, centro, línea y estado de revisión|
 
 ## Pantallas implementadas
@@ -99,14 +101,14 @@ app/src/main/java/com/example/aquasample/
 |-|-|-|
 |Login|`LoginScreen.kt`|Ingreso con usuarios ficticios; el rol se detecta según el usuario|
 |Inicio|`InicioScreen.kt`|Saludo, botón "Registrar nueva muestra" (operador) y lista de muestras|
-|Nueva muestra|`NuevaMuestraScreen.kt`|Centro, tren, línea, fecha, hora, tramo y observaciones, con validación|
-|Conteo|`ConteoScreen.kt`|Conteo de individuos con botones +/− y calibre opcional|
-|Resumen|`ResumenScreen.kt`|Revisión de los datos y envío de la muestra a revisión|
+|Nueva muestra|`NuevaMuestraScreen.kt`|Centro, tren, línea, fecha y hora (con calendario y reloj), tramo y observaciones, con validación|
+|Conteo|`ConteoScreen.kt`|Conteo de individuos con botones +/−, calibre opcional y foto de la muestra (cámara o galería)|
+|Resumen|`ResumenScreen.kt`|Revisión de los datos y la foto, y envío de la muestra a revisión|
 |Historial|`HistorialScreen.kt`|Búsqueda, filtros y exportación a CSV|
 |Bandeja de revisión|`BandejaSupervisorScreen.kt`|Home del supervisor: muestras pendientes y corregidas por revisar|
-|Detalle de muestra|`DetalleMuestraScreen.kt`|Datos completos de la muestra y acciones de revisión según el rol|
+|Detalle de muestra|`DetalleMuestraScreen.kt`|Datos completos de la muestra, su foto y acciones de revisión según el rol|
 
-Componentes Material 3 utilizados: `Scaffold`, `TopAppBar`, `NavigationBar`, `Card`, `Button`, `OutlinedButton`, `TextButton`, `IconButton`, `OutlinedTextField`, `DropdownMenu`, `FilterChip`, `HorizontalDivider` y `Text`.
+Componentes Material 3 utilizados: `Scaffold`, `TopAppBar`, `NavigationBar`, `Card`, `Button`, `OutlinedButton`, `TextButton`, `IconButton`, `OutlinedTextField`, `DropdownMenu`, `FilterChip`, `DatePickerDialog`, `TimePicker`, `AlertDialog`, `HorizontalDivider` y `Text`.
 
 ### Usuarios de prueba
 
@@ -129,7 +131,20 @@ Las muestras se guardan en una base de datos SQLite con Room (`aquasample.db`, t
 |Base de datos|`data/local/AppDatabase.kt`|Une la entidad con el DAO y crea el archivo de la base de datos|
 |Repositorio|`data/MuestraRepository.kt`|Intermediario entre los ViewModels y Room. Expone las muestras como `StateFlow` y escribe en segundo plano con corrutinas|
 
-Flujo de un dato: el ViewModel llama al repositorio, el repositorio convierte la muestra a entidad y el DAO la inserta. Como el listado es un `Flow`, la interfaz se actualiza sola cuando cambia la tabla. El campo `fotoUri` de la muestra queda preparado para la etapa de fotografías.
+Flujo de un dato: el ViewModel llama al repositorio, el repositorio convierte la muestra a entidad y el DAO la inserta. Como el listado es un `Flow`, la interfaz se actualiza sola cuando cambia la tabla. De la foto, en la base de datos se guarda solo su ruta (`fotoUri`); el archivo queda en la carpeta privada de la app.
+
+## Recursos del dispositivo
+
+La app integra estos recursos del teléfono en el registro de la muestra:
+
+|Recurso|Dónde se usa|Cómo funciona|Permisos|
+|-|-|-|-|
+|**Cámara**|Conteo → "Tomar foto"|Abre la app de cámara con `ActivityResultContracts.TakePicture()`. La foto se guarda en la carpeta privada de la app (`filesDir/fotos`); un `FileProvider` le da a la cámara permiso temporal para escribir solo ese archivo|No declara permisos: la foto la toma la app de cámara del sistema|
+|**Galería**|Conteo → "Galería"|Abre el selector de fotos del sistema con `ActivityResultContracts.PickVisualMedia()` y copia la imagen elegida a la carpeta privada de la app, porque el acceso que entrega la galería es temporal|No requiere permisos: el selector del sistema solo entrega la imagen elegida|
+|**Fecha y hora**|Nueva muestra → campos Fecha y Hora|Parten con la fecha y hora actuales del teléfono. Al tocarlos se abre un `DatePickerDialog` (con los días futuros deshabilitados) o un `TimePicker` de 24 horas. El ViewModel rechaza fechas u horas futuras con un mensaje bajo el campo|No requiere permisos|
+|**Documentos**|Historial → "Exportar a CSV"|El usuario elige dónde guardar el archivo con `ActivityResultContracts.CreateDocument` (ver [Exportación a CSV](#exportación-a-csv))|No requiere permisos|
+
+La foto es obligatoria: si falta, la app no avanza y muestra "Adjunta o toma una foto de la muestra". Implementación en `ui/components/Fotos.kt`, `data/FotoStorage.kt`, `ui/components/DialogosFechaHora.kt` y `viewmodel/MuestraViewModel.kt`. Solo se usan fotos de prueba, sin personas ni datos identificables.
 
 ## Revisión del supervisor
 
@@ -142,12 +157,77 @@ Todos los cambios de estado se guardan en Room.
 
 ## Exportación a CSV
 
-En el Historial, el botón **Exportar a CSV** abre el selector de documentos de Android (`ActivityResultContracts.CreateDocument`) para elegir dónde guardar `muestras\_aquasample.csv`. No requiere permisos, porque la app solo escribe en el archivo que el usuario elige.
+En el Historial, el botón **Exportar a CSV** abre el selector de documentos de Android (`ActivityResultContracts.CreateDocument`) para elegir dónde guardar `muestras_aquasample.csv`. No requiere permisos, porque la app solo escribe en el archivo que el usuario elige.
 
 * Exporta las muestras que se ven en pantalla: si hay filtros o búsqueda activos, solo esas.
 * Columnas: id, centro, tren, línea, fecha, hora, tramo, operador, individuos, calibre, estado, observaciones y comentario del supervisor.
 * Separador `;` y codificación UTF-8 con BOM, para que Excel en español lo abra en columnas y con tildes correctas.
 * Implementación en `data/ExportadorCsv.kt`.
+
+## Exportación a PDF (muestras validadas)
+
+En el Historial, el botón **Exportar validadas a PDF (N)** genera un reporte con las muestras **validadas por el supervisor** que se ven en pantalla (respeta la búsqueda y los filtros). Si no hay validadas, el botón queda desactivado y dice «Sin muestras validadas para PDF».
+
+* Se guarda con el mismo selector de documentos de Android (`CreateDocument("application/pdf")`), sin permisos extra.
+* Columnas: ID, fecha y hora, centro, tren, línea, tramo (m), individuos, calibre (mm), observaciones y estado.
+* Hoja A4 horizontal con el color principal de la app, un resumen (cantidad de muestras, total y promedio de individuos) y más páginas si las filas no caben.
+* Se dibuja con `PdfDocument`, que viene incluido en Android (no usa librerías externas).
+* Implementación: `data/ReporteMuestras.kt` (qué va en el reporte) y `data/GeneradorPdf.kt` (cómo se dibuja).
+* Ejemplo generado por la app: [`docs/evidencias/pruebas/reporte_validadas_ejemplo.pdf`](docs/evidencias/pruebas/reporte_validadas_ejemplo.pdf).
+
+## Pruebas y cobertura
+
+Las pruebas siguen la Guía 15 del curso: **Kotest** (`StringSpec`) sobre JUnit 5 para la lógica, **MockK** para simular dependencias, **kotlinx-coroutines-test** (`runTest`) para el código con corrutinas y **Compose UI Test** para las pantallas.
+
+### Pruebas unitarias (`app/src/test`): 63 pruebas
+
+| Archivo | Pruebas | Qué valida |
+|---|---|---|
+| `viewmodel/MuestraViewModelSpec` | 27 | Formulario de muestra: centro → tren → línea, fecha y hora (formato, fechas que no existen, futuro), tramo, conteo, calibre, foto obligatoria, envío a revisión y acciones del supervisor. El repositorio se simula con MockK y se verifica qué se guarda |
+| `viewmodel/HistorialViewModelSpec` | 12 | Búsqueda sin tildes, filtros por operador, fechas, centro, línea y estado, errores de fecha y actualización automática de la lista |
+| `viewmodel/LoginViewModelSpec` | 5 | Campos vacíos, clave incorrecta, detección del rol y cierre de sesión |
+| `data/MuestraRepositorySpec` | 7 | Conversión entre Room y el modelo, siguiente id, guardar y cambiar estado (DAO simulado con MockK), muestras pendientes |
+| `data/ExportadorCsvSpec` | 5 | Formato CSV, celdas con `;`, comillas o fórmulas, y errores al escribir el archivo |
+| `data/ReporteMuestrasSpec` | 6 | Contenido del reporte PDF: solo validadas, columnas, resumen y formato de decimales |
+| `ExampleUnitTest` | 1 | Prueba de ejemplo de la plantilla |
+
+### Pruebas en el dispositivo (`app/src/androidTest`): 7 pruebas
+
+| Archivo | Qué valida |
+|---|---|
+| `FormulariosScreenTest` (Compose UI Test) | Nueva muestra sin datos muestra el error bajo cada campo; un tramo en 0 es inválido y el error desaparece al corregirlo; Login sin datos y con clave incorrecta muestra el mensaje |
+| `GeneradorPdfTest` | El PDF generado es un archivo PDF válido y agrega páginas cuando hay muchas muestras |
+| `ExampleInstrumentedTest` | Prueba de ejemplo de la plantilla |
+
+### Cómo ejecutarlas
+
+```bash
+# Pruebas unitarias + reporte de cobertura (HTML en app/build/reports/jacoco/reporteCobertura/html/index.html)
+./gradlew :app:reporteCobertura
+
+# Falla si la cobertura de líneas de ViewModel y Repository baja del 90 %
+./gradlew :app:verificarCobertura
+
+# Pruebas de interfaz (requiere un emulador o teléfono conectado)
+./gradlew :app:connectedDebugAndroidTest
+```
+
+En Android Studio también se pueden correr con clic derecho sobre la carpeta `test` o `androidTest` → **Run Tests**.
+
+### Cobertura (JaCoCo)
+
+**97,3 % de las líneas** de la lógica evaluable (429 de 441), sobre el 90 % exigido.
+
+* Se mide `viewmodel/` y `data/` (ViewModels, Repository, exportación y mapeo de Room).
+* Se excluyen las clases que solo funcionan dentro de Android y que no pueden correr en una prueba unitaria: el código generado por Room, `AppDatabase`, `FotoStorage` (archivos y Bitmap) y `GeneradorPdf` (se prueba en el dispositivo con `GeneradorPdfTest`).
+* Las líneas sin cubrir son `MuestraRepository.inicializar()` y la carga inicial de datos, que abren la base de datos real con un `Context` de Android.
+* Se usa JaCoCo y no Kover porque Kover 0.9 no detecta las clases compiladas con el Kotlin integrado de AGP 9 (el reporte salía vacío).
+
+### Por qué estas pruebas dan confianza
+
+* **Seguridad de los datos:** las validaciones impiden guardar muestras incompletas, con fechas futuras o conteos inválidos, y el CSV neutraliza celdas que Excel podría ejecutar como fórmula.
+* **Estabilidad:** si alguien cambia una regla del formulario o de los filtros, la prueba correspondiente falla antes de llegar a `main`.
+* **Confiabilidad:** al simular el repositorio con MockK se comprueba exactamente qué datos se guardan y qué estado recibe cada muestra en la revisión del supervisor.
 
 ## Flujo de navegación actual
 
@@ -155,16 +235,16 @@ Implementado con **Navigation Compose** (`NavController` + `NavHost`, rutas en `
 
 ```mermaid
 flowchart LR
-    login\["Login"] -->|Operador| inicio\["Inicio"]
-    login -->|Supervisor| bandeja\["Bandeja de revisión"]
-    inicio --> nueva\["Nueva muestra"]
-    nueva --> conteo\["Conteo"]
-    conteo --> resumen\["Resumen"]
+    login["Login"] -->|Operador| inicio["Inicio"]
+    login -->|Supervisor| bandeja["Bandeja de revisión"]
+    inicio --> nueva["Nueva muestra"]
+    nueva --> conteo["Conteo y foto"]
+    conteo --> resumen["Resumen"]
     resumen -->|"Enviar a revisión"| inicio
     resumen -->|"Editar datos"| nueva
-    inicio <-->|"NavigationBar"| historial\["Historial"]
+    inicio <-->|"NavigationBar"| historial["Historial"]
     bandeja <-->|"NavigationBar"| historial
-    inicio --> detalle\["Detalle de muestra"]
+    inicio --> detalle["Detalle de muestra"]
     historial --> detalle
     bandeja --> detalle
     detalle -->|"Supervisor: aprobar o solicitar corrección"| bandeja
@@ -180,44 +260,92 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    start(("Inicio")) --> login\["Pantalla de Login:<br/>iniciar sesion"]
+    start(("Inicio")) --> login["Pantalla de Login:<br/>iniciar sesion"]
     login --> dec1{"¿Que rol tiene<br/>el usuario?"}
 
-    dec1 -->|Operador| formOp\["Home Operador:<br/>completar formulario de<br/>la muestra y adjuntar foto"]
+    dec1 -->|Operador| formOp["Home Operador:<br/>completar formulario de<br/>la muestra y adjuntar foto"]
     formOp --> dec2{"¿Datos y foto<br/>completos?"}
-    dec2 -->|No| errOp\["Mostrar mensaje<br/>de error de validacion"]
+    dec2 -->|No| errOp["Mostrar mensaje<br/>de error de validacion"]
     errOp --> formOp
-    dec2 -->|Si| enviar\["Enviar muestra<br/>a revision"]
+    dec2 -->|Si| enviar["Enviar muestra<br/>a revision"]
     enviar --> merge((" "))
 
-    dec1 -->|Supervisor| bandeja\["Home Supervisor:<br/>ver bandeja de<br/>muestras pendientes"]
-    bandeja --> seleccionar\["Seleccionar una<br/>muestra pendiente"]
-    seleccionar --> detalle\["Detalle de Validacion:<br/>revisar datos y<br/>fotografia de la muestra"]
+    dec1 -->|Supervisor| bandeja["Home Supervisor:<br/>ver bandeja de<br/>muestras pendientes"]
+    bandeja --> seleccionar["Seleccionar una<br/>muestra pendiente"]
+    seleccionar --> detalle["Detalle de Validacion:<br/>revisar datos y<br/>fotografia de la muestra"]
     detalle --> dec3{"¿Aprueba la<br/>muestra?"}
-    dec3 -->|Si| aprobar\["Marcar muestra<br/>como aprobada"]
+    dec3 -->|Si| aprobar["Marcar muestra<br/>como aprobada"]
     aprobar --> merge
-    dec3 -->|"No (solicitar<br/>correccion)"| corregir\["Registrar observacion<br/>y notificar al operador"]
+    dec3 -->|"No (solicitar<br/>correccion)"| corregir["Registrar observacion<br/>y notificar al operador"]
     corregir --> merge
 
     merge --> stop(("Fin"))
 ```
 
-> La bandeja y la revisión del supervisor ya están implementadas. La fotografía de la muestra forma parte del diseño, pero queda fuera de esta etapa.
+> El flujo diseñado está implementado completo: formulario con foto obligatoria, bandeja del supervisor y revisión con aprobación o solicitud de corrección.
 
 ### Wireframes
 
 Ver diseños en `docs/diseno/interfaces/`:
 
-* Pantalla de Login — `wireframe\_1\_login.png`
-* Home Operador — `wireframe\_2\_home\_operador.png`
-* Home Supervisor — `wireframe\_3\_home\_supervisor.png`
-* Detalle de Validación — `wireframe\_4\_detalle\_validacion.png`
+* Pantalla de Login — `wireframe_1_login.png`
+* Home Operador — `wireframe_2_home_operador.png`
+* Home Supervisor — `wireframe_3_home_supervisor.png`
+* Detalle de Validación — `wireframe_4_detalle_validacion.png`
 
 > Interfaces generadas con Stitch IA y ajustadas por el equipo a la paleta de AquaSample.
 
-## Capturas de la aplicación
+## Capturas y pruebas de la aplicación
 
-> Pendiente: agregar en `docs/capturas/` las capturas del recorrido Login → Inicio → Nueva muestra → Conteo → Resumen → Historial → Detalle/Bandeja del supervisor, la tabla `muestras` en el Database Inspector y el CSV exportado.
+Las capturas están en [`docs/capturas/`](docs/capturas/). Cada grupo tiene su documento de pruebas con los resultados esperados y obtenidos.
+
+### Fecha y hora (recurso del dispositivo)
+
+Pruebas: [`pruebas-fecha-hora.md`](docs/capturas/pruebas-fecha-hora.md)
+
+|Calendario|Reloj|Error de hora futura|
+|-|-|-|
+|![Calendario con días futuros deshabilitados](docs/capturas/fecha-calendario.png)|![Reloj de 24 horas](docs/capturas/fecha-reloj.png)|![Error de hora futura](docs/capturas/fecha-error-hora.png)|
+
+### Validaciones del formulario
+
+Pruebas: [`pruebas-escenarios.md`](docs/capturas/pruebas-escenarios.md)
+
+|Campos vacíos|Tramo en 0|Conteo en 0|Calibre en 0|
+|-|-|-|-|
+|![Formulario vacío](docs/capturas/escenario-campos-vacios.png)|![Tramo igual a 0](docs/capturas/escenario-tramo-cero.png)|![Conteo en 0](docs/capturas/escenario-conteo-cero.png)|![Calibre igual a 0](docs/capturas/escenario-calibre-cero.png)|
+
+### Historial y filtros por estado
+
+|Filtro Observado|Filtro Validado|
+|-|-|
+|![Filtro Observado](docs/capturas/escenario-observada.png)|![Filtro Validado](docs/capturas/escenario-validada.png)|
+
+### Foto de la muestra (recurso del dispositivo)
+
+|Sin foto: no deja avanzar|Resumen con la foto tomada con la cámara|
+|-|-|
+|![Error sin foto](docs/capturas/escenario-sin-foto.png)|![Resumen con foto](docs/capturas/escenario-con-foto.png)|
+
+### Revisión del supervisor
+
+Ciclo completo de una muestra: Pendiente → Observado → Corregido → Validado.
+
+|Bandeja del supervisor|Corrección sin comentario|Corrección solicitada|
+|-|-|-|
+|![Bandeja de revisión](docs/capturas/escenario-bandeja-supervisor.png)|![Error de comentario vacío](docs/capturas/escenario-correccion-sin-comentario.png)|![Muestra observada](docs/capturas/escenario-correccion-solicitada.png)|
+
+|Marcada como corregida por el operador|Aprobada por el supervisor|
+|-|-|
+|![Muestra corregida](docs/capturas/escenario-corregida.png)|![Muestra validada](docs/capturas/escenario-aprobada.png)|
+
+### Persistencia con Room
+
+Pruebas: [`pruebas-persistencia.md`](docs/capturas/pruebas-persistencia.md). La muestra registrada sigue en el Historial después de cerrar la app por completo y volver a abrirla.
+
+|Antes de cerrar la app|Después de volver a abrirla|
+|-|-|
+|![Historial antes de cerrar](docs/capturas/persistencia-antes.png)|![Historial después de reabrir](docs/capturas/persistencia-despues.png)|
 
 ## Avance por rama
 
@@ -230,6 +358,9 @@ Ver diseños en `docs/diseno/interfaces/`:
 |`feature/historial-detalle-supervisor`|Daniel Vargas|Búsqueda de texto y filtro por fecha, detalle de muestra, bandeja del supervisor y estado vacío|
 |`feature/revision-supervisor`|Cristobal Gonzalez|Aprobar, solicitar corrección y marcar corregida, con persistencia en Room|
 |`feature/exportar-csv`|Cristobal Gonzalez|Exportación de muestras a CSV con el selector de documentos de Android|
+|`feature/fecha-hora`|Vicente Barrera|Selector de fecha y hora con validación de fecha y hora futuras; pruebas y capturas de fecha y hora, persistencia y escenarios; actualización del README|
+|`feature/fotos-galeria`|Javier Cataldo|Foto de la muestra con cámara y galería, `FileProvider`, foto obligatoria y vista de la foto en el resumen y el detalle|
+|`chore/version-catalog`|Javier Cataldo|Dependencias de lifecycle y navigation movidas a `libs.versions.toml`|
 
 ## Cómo ejecutar el proyecto
 
@@ -240,9 +371,8 @@ Ver diseños en `docs/diseno/interfaces/`:
 
 ## Fuera del alcance de esta etapa
 
-Cámara o galería, conteo automático por imágenes, API REST, autenticación real e integración con sistemas de ALDEMAR.
+Conteo automático por imágenes, API REST, autenticación real e integración con sistemas de ALDEMAR.
 
 ## Tecnologías
 
-Kotlin · Jetpack Compose · Material Design 3 · Arquitectura MVVM · Navigation Compose · StateFlow y corrutinas · Room (SQLite) con KSP.
-
+Kotlin · Jetpack Compose · Material Design 3 · Arquitectura MVVM · Navigation Compose · StateFlow y corrutinas · Room (SQLite) con KSP · Activity Result API (cámara, galería y documentos) · FileProvider · PdfDocument · Pruebas: Kotest, JUnit 5, MockK, kotlinx-coroutines-test, Compose UI Test y JaCoCo.
