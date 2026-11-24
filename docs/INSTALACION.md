@@ -149,7 +149,7 @@ El servidor la rechazó o falló su foto. El motivo aparece en el detalle de la 
 |---|---|
 | "ya pertenece a otro operador" | Dos teléfonos usaron el mismo id (límite conocido). Hay que registrarla de nuevo en la app |
 | "ya fue validada y no se puede editar" | El servidor tiene otra versión ya validada |
-| "Las observaciones no pueden superar 500 caracteres" | La app no limita el largo y el servidor sí. Hay que registrarla de nuevo, más corta |
+| "no pueden superar 500 caracteres" o "no puede superar 500 caracteres" | La app limita las observaciones y el comentario del supervisor a 500 caracteres desde el PR de `fix/observaciones-y-contrato`. Solo puede pasar con una versión anterior de la app: si fueron las observaciones, hay que registrarla de nuevo, más corta; si fue el comentario, sincronizar y revisarla otra vez |
 | "No existe la muestra" | Ya no está en el servidor, por ejemplo porque se reinició su base |
 | Mensaje sobre la foto | Los datos llegaron, pero la foto no |
 
