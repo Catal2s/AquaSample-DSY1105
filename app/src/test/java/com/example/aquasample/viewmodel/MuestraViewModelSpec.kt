@@ -22,17 +22,12 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.Calendar
 import java.util.Date
-import java.util.TimeZone
 
 /** Fecha y hora en la zona horaria del equipo (como el reloj del teléfono). */
 private fun momento(anio: Int, mes: Int, dia: Int, hora: Int, minuto: Int): Date =
     Calendar.getInstance().apply { clear(); set(anio, mes - 1, dia, hora, minuto) }.time
 
-/** Un día a las 00:00 UTC, como lo entrega el DatePicker. */
-private fun diaUtc(anio: Int, mes: Int, dia: Int): Long =
-    Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { clear(); set(anio, mes - 1, dia) }.timeInMillis
-
-/** "Ahora" fijo para las pruebas: 15 de octubre de 2026 a las 12:00. */
+/** "Ahora" al iniciar cada prueba: 15 de octubre de 2026 a las 12:00. */
 private val AHORA = momento(2026, 10, 15, 12, 0)
 
 /**
@@ -44,21 +39,22 @@ class MuestraViewModelSpec : StringSpec({
 
     lateinit var repositorio: MuestraRepository
     lateinit var viewModel: MuestraViewModel
+    // Reloj simulado: cada prueba puede "adelantar el tiempo" cambiando esta variable.
+    var ahora = AHORA
 
     beforeTest {
+        ahora = AHORA
         repositorio = mockk(relaxed = true)
         every { repositorio.muestras } returns MutableStateFlow(DatosFicticios.muestrasEjemplo)
         every { repositorio.siguienteId() } returns 6
-        viewModel = MuestraViewModel(repositorio = repositorio, reloj = { AHORA })
+        viewModel = MuestraViewModel(repositorio = repositorio, reloj = { ahora })
     }
 
-    /** Completa la primera pantalla con datos válidos. */
+    /** Completa la primera pantalla con datos válidos (la fecha y la hora se marcan solas). */
     fun llenarDatosValidos() {
         viewModel.seleccionarCentro(DatosFicticios.centros[0])
         viewModel.seleccionarTren(DatosFicticios.trenesDe("C1")[0])
         viewModel.seleccionarLinea(DatosFicticios.lineasDe("T1")[0])
-        viewModel.onFechaChange("2026-10-14")
-        viewModel.onHoraChange("09:30")
         viewModel.onTramoChange("0,2")
     }
 
@@ -102,14 +98,11 @@ class MuestraViewModelSpec : StringSpec({
     // ---------- Validaciones de la primera pantalla ----------
 
     "con el formulario vacío marca error en centro, tren, línea y tramo" {
-        viewModel.onFechaChange("")
-        viewModel.onHoraChange("")
-
         viewModel.validarDatosMuestra().shouldBeFalse()
 
-        viewModel.uiState.value.errores.shouldContainKeys(
-            CampoMuestra.CENTRO, CampoMuestra.TREN, CampoMuestra.LINEA,
-            CampoMuestra.FECHA, CampoMuestra.HORA, CampoMuestra.TRAMO
+        // La fecha y la hora nunca dan error: las pone el reloj del teléfono.
+        viewModel.uiState.value.errores.keys shouldBe setOf(
+            CampoMuestra.CENTRO, CampoMuestra.TREN, CampoMuestra.LINEA, CampoMuestra.TRAMO
         )
     }
 
@@ -120,47 +113,6 @@ class MuestraViewModelSpec : StringSpec({
 
         viewModel.uiState.value.errores.shouldBeEmpty()
         viewModel.uiState.value.tramoMetros shouldBe 0.2 // acepta coma decimal
-    }
-
-    "rechaza una fecha con formato incorrecto o que no existe" {
-        llenarDatosValidos()
-
-        viewModel.onFechaChange("15/10/2026")
-        viewModel.validarDatosMuestra().shouldBeFalse()
-        viewModel.uiState.value.errores[CampoMuestra.FECHA] shouldBe "Usa el formato AAAA-MM-DD"
-
-        viewModel.onFechaChange("2026-02-30")
-        viewModel.validarDatosMuestra().shouldBeFalse()
-        viewModel.uiState.value.errores[CampoMuestra.FECHA] shouldBe "Usa el formato AAAA-MM-DD"
-    }
-
-    "no acepta una fecha futura" {
-        llenarDatosValidos()
-        viewModel.onFechaChange("2026-10-16")
-
-        viewModel.validarDatosMuestra().shouldBeFalse()
-
-        viewModel.uiState.value.errores[CampoMuestra.FECHA] shouldBe "La fecha no puede ser posterior a hoy"
-    }
-
-    "rechaza una hora mal escrita o fuera de rango" {
-        llenarDatosValidos()
-
-        for (horaInvalida in listOf("9:30", "25:00", "12:60", "ab:cd", "1230")) {
-            viewModel.onHoraChange(horaInvalida)
-            viewModel.validarDatosMuestra().shouldBeFalse()
-            viewModel.uiState.value.errores[CampoMuestra.HORA] shouldBe "Usa el formato HH:MM"
-        }
-    }
-
-    "si la fecha es hoy, no acepta una hora posterior a la actual" {
-        llenarDatosValidos()
-        viewModel.onFechaChange("2026-10-15")
-        viewModel.onHoraChange("12:01")
-
-        viewModel.validarDatosMuestra().shouldBeFalse()
-
-        viewModel.uiState.value.errores[CampoMuestra.HORA] shouldBe "La hora no puede ser posterior a la actual"
     }
 
     "el tramo debe ser un número mayor a cero" {
@@ -182,33 +134,29 @@ class MuestraViewModelSpec : StringSpec({
         viewModel.uiState.value.errores shouldNotContainKey CampoMuestra.TRAMO
     }
 
-    // ---------- Calendario y reloj ----------
+    // ---------- Fecha y hora automáticas ----------
 
-    "el día elegido en el calendario se guarda como AAAA-MM-DD" {
-        viewModel.onFechaElegida(diaUtc(2026, 10, 3))
+    "marcar la fecha y hora toma el momento actual del reloj, con dos dígitos" {
+        ahora = momento(2026, 11, 24, 8, 5)
 
-        viewModel.uiState.value.fecha shouldBe "2026-10-03"
-        viewModel.fechaEnMillis() shouldBe diaUtc(2026, 10, 3)
-        viewModel.hoyEnMillis() shouldBe diaUtc(2026, 10, 15)
-    }
+        viewModel.marcarFechaHoraActual()
 
-    "si la fecha escrita no es válida, el calendario no recibe un día inicial" {
-        viewModel.onFechaChange("hola")
-
-        viewModel.fechaEnMillis().shouldBeNull()
-    }
-
-    "la hora elegida en el reloj se guarda con dos dígitos" {
-        viewModel.onHoraElegida(8, 5)
-
+        viewModel.uiState.value.fecha shouldBe "2026-11-24"
         viewModel.uiState.value.hora shouldBe "08:05"
-        viewModel.horaYMinuto() shouldBe (8 to 5)
     }
 
-    "si la hora escrita no es válida, el reloj parte en 00:00" {
-        viewModel.onHoraChange("99")
+    "al enviar, la muestra queda con la fecha y hora exactas del envío" {
+        llenarDatosValidos()
+        llenarConteoValido()
+        val guardada = slot<Muestra>()
+        every { repositorio.guardar(capture(guardada)) } returns Unit
+        // Pasan unos minutos mientras el operador cuenta los choritos
+        ahora = momento(2026, 10, 15, 12, 47)
 
-        viewModel.horaYMinuto() shouldBe (0 to 0)
+        viewModel.enviarARevision(DatosFicticios.usuarios[0]).shouldBeTrue()
+
+        guardada.captured.fecha shouldBe "2026-10-15"
+        guardada.captured.hora shouldBe "12:47"
     }
 
     // ---------- Pantalla de conteo ----------
@@ -287,8 +235,8 @@ class MuestraViewModelSpec : StringSpec({
             centro.id shouldBe "C1"
             tren.id shouldBe "T1"
             linea.id shouldBe "L1"
-            fecha shouldBe "2026-10-14"
-            hora shouldBe "09:30"
+            fecha shouldBe "2026-10-15"
+            hora shouldBe "12:00"
             tramoMetros shouldBe 0.2
             operador.id shouldBe "U1"
             conteo.individuos shouldBe 310
