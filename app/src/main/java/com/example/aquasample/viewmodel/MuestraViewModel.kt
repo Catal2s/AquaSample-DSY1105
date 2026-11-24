@@ -26,6 +26,19 @@ enum class CampoMuestra { CENTRO, TREN, LINEA, FECHA, HORA, TRAMO, OBSERVACIONES
 /** Largo máximo de las observaciones. Debe coincidir con @Size(max = 500) de MuestraRequest en el backend. */
 const val MAX_OBSERVACIONES = 500
 
+/** Largo máximo del comentario del supervisor. Debe coincidir con @Size(max = 500) de CambioEstadoRequest en el backend. */
+const val MAX_COMENTARIO = 500
+
+/**
+ * Error del comentario del supervisor, o null si es válido. Solo es obligatorio al solicitar
+ * una corrección. El largo se cuenta sin espacios en los extremos, que es como se envía.
+ */
+fun errorDeComentario(comentario: String, obligatorio: Boolean): String? = when {
+    obligatorio && comentario.isBlank() -> "Escribe qué hay que corregir para solicitar la corrección"
+    comentario.trim().length > MAX_COMENTARIO -> "Usa como máximo $MAX_COMENTARIO caracteres"
+    else -> null
+}
+
 /** Marca táctil sobre la fotografía para el conteo asistido. Coordenadas normalizadas (0.0 a 1.0). */
 data class PuntoMarca(
     val id: Int,
@@ -310,7 +323,9 @@ class MuestraViewModel(
         repositorio.actualizarEstado(idMuestra, EstadoRevision.VALIDADO, rol = rol)
     }
 
+    /** No hace nada si el comentario no es válido: el servidor lo rechazaría. */
     fun solicitarCorreccion(idMuestra: Int, comentario: String, rol: Rol = Rol.SUPERVISOR) {
+        if (errorDeComentario(comentario, obligatorio = true) != null) return
         repositorio.actualizarEstado(idMuestra, EstadoRevision.OBSERVADO, comentario.trim(), rol)
     }
 
