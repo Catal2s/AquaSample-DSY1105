@@ -21,6 +21,13 @@ if (backendUri.scheme !in setOf("http", "https") || backendUri.host == null) {
     throw GradleException("backend.url no es válida: $backendUrl (ejemplo: http://192.168.1.50:8080/)")
 }
 
+// Datos de la firma de la APK release. Viven en keystore.properties (en la raíz, fuera de Git).
+// Si el archivo no existe, la app se compila igual (debug) y la release queda sin firmar.
+val propiedadesFirma = Properties().apply {
+    val archivo = rootProject.file("keystore.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+
 android {
     namespace = "com.example.aquasample"
     compileSdk {
@@ -38,12 +45,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (propiedadesFirma.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = rootProject.file(propiedadesFirma.getProperty("storeFile"))
+                storePassword = propiedadesFirma.getProperty("storePassword")
+                keyAlias = propiedadesFirma.getProperty("keyAlias")
+                keyPassword = propiedadesFirma.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             // Registra qué líneas ejecutan las pruebas unitarias (para el reporte de JaCoCo)
             enableUnitTestCoverage = true
         }
         release {
+            signingConfig = signingConfigs.findByName("release")
             optimization {
                 enable = false
             }
