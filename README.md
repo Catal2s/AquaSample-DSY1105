@@ -149,6 +149,71 @@ En el Historial, el botón **Exportar a CSV** abre el selector de documentos de 
 * Separador `;` y codificación UTF-8 con BOM, para que Excel en español lo abra en columnas y con tildes correctas.
 * Implementación en `data/ExportadorCsv.kt`.
 
+## Exportación a PDF (muestras validadas)
+
+En el Historial, el botón **Exportar validadas a PDF (N)** genera un reporte con las muestras **validadas por el supervisor** que se ven en pantalla (respeta la búsqueda y los filtros). Si no hay validadas, el botón queda desactivado y dice «Sin muestras validadas para PDF».
+
+* Se guarda con el mismo selector de documentos de Android (`CreateDocument("application/pdf")`), sin permisos extra.
+* Columnas: ID, fecha y hora, centro, tren, línea, tramo (m), individuos, calibre (mm), observaciones y estado.
+* Hoja A4 horizontal con el color principal de la app, un resumen (cantidad de muestras, total y promedio de individuos) y más páginas si las filas no caben.
+* Se dibuja con `PdfDocument`, que viene incluido en Android (no usa librerías externas).
+* Implementación: `data/ReporteMuestras.kt` (qué va en el reporte) y `data/GeneradorPdf.kt` (cómo se dibuja).
+* Ejemplo generado por la app: [`docs/evidencias/pruebas/reporte_validadas_ejemplo.pdf`](docs/evidencias/pruebas/reporte_validadas_ejemplo.pdf).
+
+## Pruebas y cobertura
+
+Las pruebas siguen la Guía 15 del curso: **Kotest** (`StringSpec`) sobre JUnit 5 para la lógica, **MockK** para simular dependencias, **kotlinx-coroutines-test** (`runTest`) para el código con corrutinas y **Compose UI Test** para las pantallas.
+
+### Pruebas unitarias (`app/src/test`): 63 pruebas
+
+| Archivo | Pruebas | Qué valida |
+|---|---|---|
+| `viewmodel/MuestraViewModelSpec` | 27 | Formulario de muestra: centro → tren → línea, fecha y hora (formato, fechas que no existen, futuro), tramo, conteo, calibre, foto obligatoria, envío a revisión y acciones del supervisor. El repositorio se simula con MockK y se verifica qué se guarda |
+| `viewmodel/HistorialViewModelSpec` | 12 | Búsqueda sin tildes, filtros por operador, fechas, centro, línea y estado, errores de fecha y actualización automática de la lista |
+| `viewmodel/LoginViewModelSpec` | 5 | Campos vacíos, clave incorrecta, detección del rol y cierre de sesión |
+| `data/MuestraRepositorySpec` | 7 | Conversión entre Room y el modelo, siguiente id, guardar y cambiar estado (DAO simulado con MockK), muestras pendientes |
+| `data/ExportadorCsvSpec` | 5 | Formato CSV, celdas con `;`, comillas o fórmulas, y errores al escribir el archivo |
+| `data/ReporteMuestrasSpec` | 6 | Contenido del reporte PDF: solo validadas, columnas, resumen y formato de decimales |
+| `ExampleUnitTest` | 1 | Prueba de ejemplo de la plantilla |
+
+### Pruebas en el dispositivo (`app/src/androidTest`): 7 pruebas
+
+| Archivo | Qué valida |
+|---|---|
+| `FormulariosScreenTest` (Compose UI Test) | Nueva muestra sin datos muestra el error bajo cada campo; un tramo en 0 es inválido y el error desaparece al corregirlo; Login sin datos y con clave incorrecta muestra el mensaje |
+| `GeneradorPdfTest` | El PDF generado es un archivo PDF válido y agrega páginas cuando hay muchas muestras |
+| `ExampleInstrumentedTest` | Prueba de ejemplo de la plantilla |
+
+### Cómo ejecutarlas
+
+```bash
+# Pruebas unitarias + reporte de cobertura (HTML en app/build/reports/jacoco/reporteCobertura/html/index.html)
+./gradlew :app:reporteCobertura
+
+# Falla si la cobertura de líneas de ViewModel y Repository baja del 90 %
+./gradlew :app:verificarCobertura
+
+# Pruebas de interfaz (requiere un emulador o teléfono conectado)
+./gradlew :app:connectedDebugAndroidTest
+```
+
+En Android Studio también se pueden correr con clic derecho sobre la carpeta `test` o `androidTest` → **Run Tests**.
+
+### Cobertura (JaCoCo)
+
+**97,3 % de las líneas** de la lógica evaluable (429 de 441), sobre el 90 % exigido.
+
+* Se mide `viewmodel/` y `data/` (ViewModels, Repository, exportación y mapeo de Room).
+* Se excluyen las clases que solo funcionan dentro de Android y que no pueden correr en una prueba unitaria: el código generado por Room, `AppDatabase`, `FotoStorage` (archivos y Bitmap) y `GeneradorPdf` (se prueba en el dispositivo con `GeneradorPdfTest`).
+* Las líneas sin cubrir son `MuestraRepository.inicializar()` y la carga inicial de datos, que abren la base de datos real con un `Context` de Android.
+* Se usa JaCoCo y no Kover porque Kover 0.9 no detecta las clases compiladas con el Kotlin integrado de AGP 9 (el reporte salía vacío).
+
+### Por qué estas pruebas dan confianza
+
+* **Seguridad de los datos:** las validaciones impiden guardar muestras incompletas, con fechas futuras o conteos inválidos, y el CSV neutraliza celdas que Excel podría ejecutar como fórmula.
+* **Estabilidad:** si alguien cambia una regla del formulario o de los filtros, la prueba correspondiente falla antes de llegar a `main`.
+* **Confiabilidad:** al simular el repositorio con MockK se comprueba exactamente qué datos se guardan y qué estado recibe cada muestra en la revisión del supervisor.
+
 ## Flujo de navegación actual
 
 Implementado con **Navigation Compose** (`NavController` + `NavHost`, rutas en `ui/navigation/Rutas.kt`):
@@ -244,5 +309,5 @@ Cámara o galería, conteo automático por imágenes, API REST, autenticación r
 
 ## Tecnologías
 
-Kotlin · Jetpack Compose · Material Design 3 · Arquitectura MVVM · Navigation Compose · StateFlow y corrutinas · Room (SQLite) con KSP.
+Kotlin · Jetpack Compose · Material Design 3 · Arquitectura MVVM · Navigation Compose · StateFlow y corrutinas · Room (SQLite) con KSP · PdfDocument · Pruebas: Kotest, JUnit 5, MockK, kotlinx-coroutines-test, Compose UI Test y JaCoCo.
 
