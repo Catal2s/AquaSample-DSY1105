@@ -28,7 +28,17 @@ import com.example.aquasample.ui.components.FilaDato
 import com.example.aquasample.ui.navigation.Rutas
 import com.example.aquasample.viewmodel.LoginViewModel
 import com.example.aquasample.viewmodel.MuestraViewModel
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import com.example.aquasample.ui.components.FotoMuestra
+import com.example.aquasample.R
 
 @Composable
 fun ResumenScreen(
@@ -64,11 +74,43 @@ fun ResumenScreen(
                 FilaDato("Hora", estado.hora)
                 FilaDato("Tramo", "${estado.tramo.trim()} m")
                 HorizontalDivider()
-                FilaDato("Individuos", estado.individuos.toString())
+                val textoConteo = if (estado.marcasPuntos.isNotEmpty()) {
+                    "${estado.individuos} (${estado.totalMarcas} en foto" +
+                        (if (estado.ajusteManual > 0) " + ${estado.ajusteManual} ajuste" else "") + ")"
+                } else {
+                    estado.individuos.toString()
+                }
+                FilaDato("Individuos", textoConteo)
                 FilaDato("Calibre promedio", estado.calibre.trim().ifBlank { null }?.let { "$it mm" } ?: "No registrado")
                 FilaDato("Observaciones", estado.observaciones.trim().ifBlank { "Sin observaciones" })
                 HorizontalDivider()
                 FilaDato("Operador", loginEstado.usuarioActual?.nombre ?: "-")
+            }
+        }
+
+        // Aviso visual: Estado de sincronización pendiente
+        Surface(
+            color = MaterialTheme.colorScheme.tertiaryContainer,
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_sync),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Aviso: La muestra se guardará localmente (Pendiente de sincronización).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
 

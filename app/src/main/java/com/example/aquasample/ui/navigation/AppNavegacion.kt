@@ -30,6 +30,7 @@ import com.example.aquasample.R
 import com.example.aquasample.model.Rol
 import com.example.aquasample.ui.screens.BandejaSupervisorScreen
 import com.example.aquasample.ui.screens.ConteoScreen
+import com.example.aquasample.ui.screens.DashboardScreen
 import com.example.aquasample.ui.screens.DetalleMuestraScreen
 import com.example.aquasample.ui.screens.HistorialScreen
 import com.example.aquasample.ui.screens.InicioScreen
@@ -94,6 +95,12 @@ fun AquaSampleApp() {
                             popUpTo(rutaInicio)
                             launchSingleTop = true
                         }
+                    },
+                    onDashboard = {
+                        navController.navigate(Rutas.DASHBOARD) {
+                            popUpTo(rutaInicio)
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
@@ -111,6 +118,7 @@ fun AquaSampleApp() {
             composable(Rutas.RESUMEN) { ResumenScreen(loginViewModel, muestraViewModel, navController) }
             composable(Rutas.HISTORIAL) { HistorialScreen(loginViewModel, historialViewModel, navController) }
             composable(Rutas.BANDEJA) { BandejaSupervisorScreen(loginViewModel, muestraViewModel, navController) }
+            composable(Rutas.DASHBOARD) { DashboardScreen(muestraViewModel) }
             composable(
                 route = Rutas.DETALLE,
                 arguments = listOf(navArgument(Rutas.ARG_ID_MUESTRA) { type = NavType.IntType })
@@ -147,6 +155,7 @@ private fun BarraSuperior(
         Rutas.RESUMEN -> "Resumen"
         Rutas.HISTORIAL -> "Historial"
         Rutas.BANDEJA -> "Bandeja de revisión"
+        Rutas.DASHBOARD -> "Dashboard"
         Rutas.DETALLE -> "Detalle de muestra"
         else -> "AquaSample"
     }
@@ -160,7 +169,7 @@ private fun BarraSuperior(
             }
         },
         actions = {
-            if (rutaActual == Rutas.INICIO || rutaActual == Rutas.BANDEJA) {
+            if (rutaActual == Rutas.INICIO || rutaActual == Rutas.BANDEJA || rutaActual == Rutas.DASHBOARD) {
                 IconButton(onClick = onCerrarSesion) {
                     Icon(painterResource(R.drawable.ic_cerrar_sesion), contentDescription = "Cerrar sesión")
                 }
@@ -181,7 +190,8 @@ private fun BarraNavegacion(
     esOperador: Boolean,
     onInicio: () -> Unit,
     onNuevaMuestra: () -> Unit,
-    onHistorial: () -> Unit
+    onHistorial: () -> Unit,
+    onDashboard: () -> Unit
 ) {
     NavigationBar {
         ItemBarra(
@@ -203,6 +213,12 @@ private fun BarraNavegacion(
             icono = R.drawable.ic_historial,
             seleccionado = rutaActual == Rutas.HISTORIAL,
             onClick = onHistorial
+        )
+        ItemBarra(
+            texto = "Dashboard",
+            icono = R.drawable.ic_dashboard,
+            seleccionado = rutaActual == Rutas.DASHBOARD,
+            onClick = onDashboard
         )
     }
 }

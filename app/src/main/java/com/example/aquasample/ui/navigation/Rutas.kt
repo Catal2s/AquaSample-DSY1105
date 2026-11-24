@@ -16,6 +16,7 @@ object Rutas {
     const val RESUMEN = "resumen"
     const val HISTORIAL = "historial"
     const val BANDEJA = "bandeja"
+    const val DASHBOARD = "dashboard"
 
     /** El detalle recibe el id de la muestra en la ruta, por ejemplo "detalle/3". */
     const val ARG_ID_MUESTRA = "idMuestra"
