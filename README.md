@@ -1,6 +1,6 @@
 # AquaSample
 
-Aplicación móvil para registrar y validar muestras de terreno en Aldemar SpA, con dos roles: **Operador de Muestreo** y **Supervisor Técnico** (MVP académico — DSY1105, La Brigada Fantasma).
+Aplicación móvil para registrar y validar muestras de terreno en Aldemar SpA, con tres roles: **Operador de Muestreo**, **Supervisor Técnico** y **Analista de Datos** (MVP académico — DSY1105, La Brigada Fantasma).
 
 ## Problema que aborda
 
@@ -27,9 +27,9 @@ La lista detallada de pendientes también está en [`TAREAS_P3.md`](TAREAS_P3.md
 
 ## Funcionalidades
 
-* **Login con roles** (Operador y Supervisor) con usuarios ficticios.
+* **Login con roles** (Operador, Supervisor y Analista) con usuarios ficticios.
 * **Registro de muestras** en tres pasos (datos, conteo y resumen), con validación de campos obligatorios y mensajes de error.
-* **Fecha y hora del teléfono:** el formulario parte con el momento actual y se puede cambiar con un calendario y un reloj; no se aceptan fechas ni horas futuras.
+* **Fecha y hora automáticas:** se marcan solas con el reloj del teléfono al abrir el formulario y se actualizan al enviar la muestra; el operador no las escribe.
 * **Conteo manual** de individuos con botones +/− y calibre promedio opcional. La app no cuenta automáticamente.
 * **Foto de la muestra** tomada con la cámara o elegida desde la galería; es obligatoria para enviar la muestra.
 * **Historial** con búsqueda de texto y filtros por fecha, centro, línea y estado de revisión.
@@ -92,7 +92,7 @@ app/src/main/java/com/example/aquasample/
 |ViewModel|Pantallas|Responsabilidad|
 |-|-|-|
 |`LoginViewModel`|Login|Valida usuario y clave ficticios y guarda el usuario de la sesión|
-|`MuestraViewModel`|Nueva muestra, Conteo, Resumen, Inicio, Detalle, Bandeja|Formulario compartido de la muestra, validaciones (incluidas fecha y hora no futuras y foto obligatoria), envío a revisión y acciones de revisión (aprobar, solicitar corrección, marcar corregida)|
+|`MuestraViewModel`|Nueva muestra, Conteo, Resumen, Inicio, Detalle, Bandeja|Formulario compartido de la muestra, validaciones (foto obligatoria; fecha y hora se marcan automáticamente), envío a revisión y acciones de revisión (aprobar, solicitar corrección, marcar corregida)|
 |`HistorialViewModel`|Historial|Búsqueda de texto y filtros por fecha, centro, línea y estado de revisión|
 
 ## Pantallas implementadas
@@ -101,14 +101,14 @@ app/src/main/java/com/example/aquasample/
 |-|-|-|
 |Login|`LoginScreen.kt`|Ingreso con usuarios ficticios; el rol se detecta según el usuario|
 |Inicio|`InicioScreen.kt`|Saludo, botón "Registrar nueva muestra" (operador) y lista de muestras|
-|Nueva muestra|`NuevaMuestraScreen.kt`|Centro, tren, línea, fecha y hora (con calendario y reloj), tramo y observaciones, con validación|
+|Nueva muestra|`NuevaMuestraScreen.kt`|Centro, tren, línea, fecha y hora automáticas (solo lectura), tramo y observaciones, con validación|
 |Conteo|`ConteoScreen.kt`|Conteo de individuos con botones +/−, calibre opcional y foto de la muestra (cámara o galería)|
 |Resumen|`ResumenScreen.kt`|Revisión de los datos y la foto, y envío de la muestra a revisión|
 |Historial|`HistorialScreen.kt`|Búsqueda, filtros y exportación a CSV|
 |Bandeja de revisión|`BandejaSupervisorScreen.kt`|Home del supervisor: muestras pendientes y corregidas por revisar|
 |Detalle de muestra|`DetalleMuestraScreen.kt`|Datos completos de la muestra, su foto y acciones de revisión según el rol|
 
-Componentes Material 3 utilizados: `Scaffold`, `TopAppBar`, `NavigationBar`, `Card`, `Button`, `OutlinedButton`, `TextButton`, `IconButton`, `OutlinedTextField`, `DropdownMenu`, `FilterChip`, `DatePickerDialog`, `TimePicker`, `AlertDialog`, `HorizontalDivider` y `Text`.
+Componentes Material 3 utilizados: `Scaffold`, `TopAppBar`, `NavigationBar`, `Card`, `Button`, `OutlinedButton`, `TextButton`, `IconButton`, `OutlinedTextField`, `DropdownMenu`, `FilterChip`, `Surface`, `AlertDialog`, `HorizontalDivider` y `Text`.
 
 ### Usuarios de prueba
 
@@ -117,6 +117,15 @@ Componentes Material 3 utilizados: `Scaffold`, `TopAppBar`, `NavigationBar`, `Ca
 |`operador1`|`1234`|Operador de muestreo|
 |`operador2`|`1234`|Operador de muestreo|
 |`supervisor1`|`1234`|Supervisor técnico|
+|`analista1`|`1234`|Analista de datos|
+
+**Qué puede hacer cada rol:**
+
+|Rol|Pantalla inicial|Puede|
+|-|-|-|
+|Operador|Inicio|Registrar muestras, ver sus propios envíos y marcar como corregida una muestra observada|
+|Supervisor|Bandeja de revisión|Ver todas las muestras, aprobarlas, solicitar corrección y eliminarlas|
+|Analista|Dashboard|Solo consulta: dashboard, historial con filtros y comparador, y exportar a CSV o PDF. No crea ni modifica muestras|
 
 La primera vez que se abre la app se cargan 5 muestras ficticias de ejemplo con distintos estados de revisión, para que Inicio e Historial muestren datos desde el primer ingreso.
 
@@ -141,7 +150,7 @@ La app integra estos recursos del teléfono en el registro de la muestra:
 |-|-|-|-|
 |**Cámara**|Conteo → "Tomar foto"|Abre la app de cámara con `ActivityResultContracts.TakePicture()`. La foto se guarda en la carpeta privada de la app (`filesDir/fotos`); un `FileProvider` le da a la cámara permiso temporal para escribir solo ese archivo|No declara permisos: la foto la toma la app de cámara del sistema|
 |**Galería**|Conteo → "Galería"|Abre el selector de fotos del sistema con `ActivityResultContracts.PickVisualMedia()` y copia la imagen elegida a la carpeta privada de la app, porque el acceso que entrega la galería es temporal|No requiere permisos: el selector del sistema solo entrega la imagen elegida|
-|**Fecha y hora**|Nueva muestra → campos Fecha y Hora|Parten con la fecha y hora actuales del teléfono. Al tocarlos se abre un `DatePickerDialog` (con los días futuros deshabilitados) o un `TimePicker` de 24 horas. El ViewModel rechaza fechas u horas futuras con un mensaje bajo el campo|No requiere permisos|
+|**Fecha y hora**|Nueva muestra → recuadro «Fecha y hora del registro»|Se marcan automáticamente con el reloj del teléfono al abrir el formulario y otra vez al enviar, así la muestra queda con el momento exacto del registro. No se pueden editar, lo que evita errores de digitación|No requiere permisos|
 |**Documentos**|Historial → "Exportar a CSV"|El usuario elige dónde guardar el archivo con `ActivityResultContracts.CreateDocument` (ver [Exportación a CSV](#exportación-a-csv))|No requiere permisos|
 
 La foto es obligatoria: si falta, la app no avanza y muestra "Adjunta o toma una foto de la muestra". Implementación en `ui/components/Fotos.kt`, `data/FotoStorage.kt`, `ui/components/DialogosFechaHora.kt` y `viewmodel/MuestraViewModel.kt`. Solo se usan fotos de prueba, sin personas ni datos identificables.
@@ -179,13 +188,16 @@ En el Historial, el botón **Exportar validadas a PDF (N)** genera un reporte co
 
 Las pruebas siguen la Guía 15 del curso: **Kotest** (`StringSpec`) sobre JUnit 5 para la lógica, **MockK** para simular dependencias, **kotlinx-coroutines-test** (`runTest`) para el código con corrutinas y **Compose UI Test** para las pantallas.
 
-### Pruebas unitarias (`app/src/test`): 63 pruebas
+### Pruebas unitarias (`app/src/test`): 148 pruebas
+
+La tabla resume las del formulario, el historial, el login y la exportación. Las de sincronización, API externa y Room están en `data/sync`, `MuestraRepositorySyncTest` y `CondicionesMarinas*Test`.
 
 | Archivo | Pruebas | Qué valida |
 |---|---|---|
-| `viewmodel/MuestraViewModelSpec` | 27 | Formulario de muestra: centro → tren → línea, fecha y hora (formato, fechas que no existen, futuro), tramo, conteo, calibre, foto obligatoria, envío a revisión y acciones del supervisor. El repositorio se simula con MockK y se verifica qué se guarda |
+| `viewmodel/MuestraViewModelSpec` | 21 | Formulario de muestra: centro → tren → línea, fecha y hora automáticas (se marcan con el reloj y se actualizan al enviar), tramo, conteo, calibre, foto obligatoria, envío a revisión y acciones del supervisor. El repositorio se simula con MockK y se verifica qué se guarda |
 | `viewmodel/HistorialViewModelSpec` | 12 | Búsqueda sin tildes, filtros por operador, fechas, centro, línea y estado, errores de fecha y actualización automática de la lista |
-| `viewmodel/LoginViewModelSpec` | 5 | Campos vacíos, clave incorrecta, detección del rol y cierre de sesión |
+| `viewmodel/LoginViewModelSpec` | 6 | Campos vacíos, clave incorrecta, detección del rol (incluido el Analista) y cierre de sesión |
+| `ui/navigation/RutasSpec` | 5 | Pantalla inicial de cada rol: Operador en Inicio, Supervisor en la Bandeja y Analista en el Dashboard |
 | `data/MuestraRepositorySpec` | 7 | Conversión entre Room y el modelo, siguiente id, guardar y cambiar estado (DAO simulado con MockK), muestras pendientes |
 | `data/ExportadorCsvSpec` | 5 | Formato CSV, celdas con `;`, comillas o fórmulas, y errores al escribir el archivo |
 | `data/ReporteMuestrasSpec` | 6 | Contenido del reporte PDF: solo validadas, columnas, resumen y formato de decimales |
@@ -216,7 +228,7 @@ En Android Studio también se pueden correr con clic derecho sobre la carpeta `t
 
 ### Cobertura (JaCoCo)
 
-**97,3 % de las líneas** de la lógica evaluable (429 de 441), sobre el 90 % exigido.
+**93,6 % de las líneas** de la lógica evaluable (886 de 947), sobre el 90 % exigido.
 
 * Se mide `viewmodel/` y `data/` (ViewModels, Repository, exportación y mapeo de Room).
 * Se excluyen las clases que solo funcionan dentro de Android y que no pueden correr en una prueba unitaria: el código generado por Room, `AppDatabase`, `FotoStorage` (archivos y Bitmap) y `GeneradorPdf` (se prueba en el dispositivo con `GeneradorPdfTest`).
@@ -302,6 +314,8 @@ Las capturas están en [`docs/capturas/`](docs/capturas/). Cada grupo tiene su d
 ### Fecha y hora (recurso del dispositivo)
 
 Pruebas: [`pruebas-fecha-hora.md`](docs/capturas/pruebas-fecha-hora.md)
+
+> Actualización EA4: la fecha y la hora ahora se marcan automáticamente con el reloj del teléfono y no se editan. Las capturas de abajo corresponden a la versión anterior, con calendario y reloj.
 
 |Calendario|Reloj|Error de hora futura|
 |-|-|-|
