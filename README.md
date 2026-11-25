@@ -361,6 +361,18 @@ Pruebas: [`pruebas-persistencia.md`](docs/capturas/pruebas-persistencia.md). La 
 |-|-|
 |![Historial antes de cerrar](docs/capturas/persistencia-antes.png)|![Historial después de reabrir](docs/capturas/persistencia-despues.png)|
 
+### Sincronización con el backend
+
+Pruebas: [`pruebas-backend.md`](docs/capturas/pruebas-backend.md). Probado en un teléfono físico con el backend corriendo en el PC. Las muestras registradas llegan al backend al sincronizar. Sin conexión, quedan guardadas en el teléfono y se envían cuando el servidor vuelve. Las respuestas del backend están en [`backend-2-api-muestra-6.json`](docs/capturas/backend-2-api-muestra-6.json) y [`backend-6-api-muestra-7.json`](docs/capturas/backend-6-api-muestra-7.json).
+
+|Muestra registrada|Sincronizada con el backend|Backend apagado|
+|-|-|-|
+|![Resumen antes de sincronizar](docs/capturas/backend-1-resumen.png)|![Todo está sincronizado](docs/capturas/backend-2-sincronizar.png)|![Sin conexión con el servidor](docs/capturas/backend-3-sin-conexion.png)|
+
+|Pendiente sin conexión|Backend de vuelta|Historial sincronizado|
+|-|-|-|
+|![Muestra pendiente de sincronización](docs/capturas/backend-4-pendiente.png)|![Enviadas: 1](docs/capturas/backend-5-reconexion.png)|![Todas sincronizadas](docs/capturas/backend-6-sincronizada.png)|
+
 ## Avance por rama
 
 |Rama|Responsable|Contenido|
@@ -375,6 +387,7 @@ Pruebas: [`pruebas-persistencia.md`](docs/capturas/pruebas-persistencia.md). La 
 |`feature/fecha-hora`|Vicente Barrera|Selector de fecha y hora con validación de fecha y hora futuras; pruebas y capturas de fecha y hora, persistencia y escenarios; actualización del README|
 |`feature/fotos-galeria`|Javier Cataldo|Foto de la muestra con cámara y galería, `FileProvider`, foto obligatoria y vista de la foto en el resumen y el detalle|
 |`chore/version-catalog`|Javier Cataldo|Dependencias de lifecycle y navigation movidas a `libs.versions.toml`|
+|`feature/evidencia-backend`|Vicente Barrera|Pruebas y capturas de la sincronización con el backend, con y sin conexión|
 
 ## Cómo ejecutar el proyecto
 
