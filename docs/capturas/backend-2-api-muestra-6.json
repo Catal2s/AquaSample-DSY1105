@@ -1,0 +1,23 @@
+{
+    "id":  6,
+    "centroId":  "C1",
+    "trenId":  "T1",
+    "lineaId":  "L1",
+    "fecha":  "2026-11-24",
+    "hora":  "22:54",
+    "tramoMetros":  1.4,
+    "operadorId":  "U1",
+    "individuos":  11,
+    "calibrePromedioMm":  null,
+    "asistidoPorFoto":  true,
+    "marcasRegistradas":  11,
+    "ajusteManual":  0,
+    "observaciones":  "",
+    "estado":  "PENDIENTE",
+    "comentarioSupervisor":  null,
+    "tieneFoto":  true,
+    "fotoTipo":  "image/jpeg",
+    "fotoTamanoBytes":  2186152,
+    "creadoEn":  "2026-11-24T22:54:40",
+    "actualizadoEn":  "2026-11-24T22:54:40"
+}
